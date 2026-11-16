@@ -1,7 +1,8 @@
 /* Adventure Bay — analytics bridge to Amplitude (Browser SDK 2).
 
    Privacy rules for a children's app (COPPA / GDPR-K minded):
-   - Nothing is sent until a parent turns "Share anonymous usage data" on in the Parents' Corner (off by default).
+   - Sharing is on by default (src/config.js → analyticsOnByDefault); a parent can turn it off in the Parents' Corner,
+     and that choice is remembered. Set analyticsOnByDefault to false to require a parent to opt in instead.
    - No names, typed text or IP addresses are ever sent; users are identified only by Amplitude's random device ID.
    - Only session tracking is auto-captured; page views, clicks, forms, file downloads and marketing attribution are off.
    - With no API key in src/config.js, the SDK is never loaded.
@@ -17,8 +18,9 @@
   const debug = !!C.debug || /[?&]debug_analytics=1\b/.test(location.search);
   const log = (...a) => { if(debug) console.info('%c[analytics]', 'color:#8a5cf6;font-weight:bold', ...a); };
 
-  let consent = false;
-  try{ consent = JSON.parse(localStorage.getItem(CONSENT_KEY) || 'false') === true; }catch(e){}
+  // A parent's saved choice always wins; with no saved choice, use the default from src/config.js
+  let consent = C.analyticsOnByDefault !== false;
+  try{ const saved = localStorage.getItem(CONSENT_KEY); if(saved !== null) consent = JSON.parse(saved) === true; }catch(e){}
 
   const state = { amp:null, loading:false, ready:false, queue:[] };
   const configured = () => !!C.amplitudeApiKey;
@@ -71,7 +73,10 @@
     setConsent(on){
       consent = !!on;
       try{ localStorage.setItem(CONSENT_KEY, JSON.stringify(consent)); }catch(e){}
-      if(state.amp) state.amp.setOptOut(!consent);
+      if(state.amp){
+        if(consent) state.amp.setOptOut(false);
+        else { const f = state.amp.flush && state.amp.flush(); Promise.resolve(f && f.promise).finally(() => state.amp.setOptOut(true)); }   // send what's waiting, then stop
+      }
       if(consent) load(); else state.queue.length = 0;
       log('consent', consent);
     },

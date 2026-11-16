@@ -633,3 +633,34 @@ html{font-size:clamp(16px, 1.1vw + 11px, 19px)}
 .arrow{width:92px;height:92px;font-size:2.9rem;border-radius:22px}
 .pcard{width:62px;height:62px;font-size:2rem}
 @media (max-width:460px){.arrow{width:72px;height:72px;font-size:2.3rem}}
+/* first-launch setup: the child's name and age */
+.namebox.setup{flex-direction:column;gap:10px}
+.namebox.setup label{font-family:var(--f-display);font-weight:700;font-size:1.45rem}
+.namebox.setup input{width:min(360px,86vw);font-size:1.5rem;padding:14px 18px;border-radius:18px}
+.setupq{text-align:center;margin:0;font-family:var(--f-display);font-weight:700;font-size:1.45rem}
+/* PHONES: smaller guide; the bubble jumps to the top when it would cover a button (see placeBubble in game.js) */
+#buddy.bbl-top .bbl{position:fixed;top:calc(env(safe-area-inset-top,0px) + 76px);inset-inline-start:max(12px,env(safe-area-inset-left,0px));inset-inline-end:max(12px,env(safe-area-inset-right,0px));max-width:none;width:auto;transform-origin:50% 0;border-radius:20px}
+@media (max-width:600px){
+  .buddy{width:56px;height:56px}
+  .bface{font-size:2.1rem}
+  .bbl{font-size:1.1rem;max-width:calc(100vw - 32px);padding:10px 14px}
+  .wrap{padding-bottom:84px}
+}
+.namebox.setup input{box-sizing:border-box;width:min(360px,100%)}
+.namebox{max-width:100%}
+/* PHONES: a compact top bar so it never pushes the page wider than the screen (Android would zoom the page out) */
+.tools{flex-wrap:wrap;justify-content:flex-end;min-width:0}
+@media (max-width:440px){
+  .top{gap:6px}
+  .tools{gap:6px}
+  .iconbtn{width:46px;height:46px}
+  .iconbtn .ico{width:22px;height:22px}
+  .langbtn{height:46px;padding:0 12px;font-size:1rem;gap:6px}
+  .langbtn .ico{width:18px;height:18px}
+  .pill{padding:6px 10px;font-size:1rem}
+  #fs{display:none}
+  .brand{font-size:1.1rem}
+}
+/* a picture that is the whole answer gets bigger; the bubble keeps clear of the guide's circle */
+.ans > .cr:only-child{font-size:1.35em}
+#buddy{gap:14px}

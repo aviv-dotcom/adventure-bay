@@ -30,8 +30,9 @@ if(!/iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent)){ try{ const l=docume
 
 /* ---------- language ---------- */
 let lang = store.get('lang','en');
-const names = store.get('names',{en:'Yanai',he:'ינאי'});
-const nm = () => names[lang] || (lang==='he'?'ינאי':'Yanai');
+const names = store.get('names',{en:'',he:''});   // no built-in name: a parent types the child's name on first launch
+/* the child's name in this language, else the name typed in the other language, else a friendly placeholder */
+const nm = () => names[lang] || names[lang==='he'?'en':'he'] || (lang==='he'?'חוקר':'Explorer');
 const he = () => lang==='he';
 const T = {
   en:{ title:'Adventure Bay', invite:n=>`Coco the parrot invites <b id="hn">${n}</b> on an adventure!`,
@@ -78,6 +79,7 @@ let voiceSpeed = store.get('vspeed', 1);              // 0.8 = slow, 1 = normal 
 let voicePref = store.get('vpref', {en:'', he:''});    // a voice the parent picked, by name
 let voices = {en:null, he:null}, voiceLists = {en:[], he:[]}, voicesLoaded = false;
 const scoreVoice = v => { const n=v.name; let s=0;
+  if(/google us english/i.test(n)) s+=200;   // first choice for English when the device has it
   if(/natural|neural|online|premium|enhanced|wavenet|siri/i.test(n)) s+=50;   // the newer, human-sounding voices
   if(/google/i.test(n)) s+=30;
   if(/carmit|hila|avri|asaf|samantha|aria|jenny|ava|allison|karen|serena|libby|sonia|zira|female/i.test(n)) s+=20;
@@ -1389,9 +1391,9 @@ const progOf = (w,a) => progressAll[w][lang][a];
 const totalStars = (a=savedAge) => WORLD_ORDER.reduce((s,w)=>s+progOf(w,a).stars,0);   // stars at one level, so counts match the trail and resets
 const T2 = {
   en:{ hello:n=>`Hi ${n}! Ready for an adventure?`, dataH:'Usage data', dataShare:'Share anonymous usage data', off:'Off', on:'On',
-       dataNote:"When on, the game sends anonymous events (like “station completed” or “question answered”) to help improve it. It never sends names, typed text or IP addresses. Off by default.",
+       dataNote:"When on, the game sends anonymous events (like “station completed” or “question answered”) to help improve it. It never sends names, typed text or IP addresses. On by default; you can turn it off here at any time.",
        dataOff:'Usage data is not set up in this copy of the game, so nothing is sent.', practice:g=>`Practice with ${g}`, practiceOffer:'I made a special practice round with the tricky ones. Tap the Practice button!', practiceDone:n=>`Great practice, ${n}! The tricky ones are getting easier.`, lvUp:"You're getting really good at this! Next time it'll be a bit more challenging 🚀", skillsH:'Skills (the game adjusts these automatically)', lvHarder:'Harder', lvEasier:'Easier', lvOn:'On level', locked:'Finish every stop to open the treasure!', openIt:'Tap to open the treasure!', guideHi:(n,g)=>`Hi ${n}! I'm ${g.name.en} ${g.kind.en}, your guide here. Tap the first stop and let's go!`, welcome:(n,s)=>`Welcome back, ${n}! You have ${s} stars.`, welcome0:n=>`Welcome back, ${n}! Let's keep going.`, cont:'Continue the adventure', start:'Start the adventure',
-       allDone:'You finished every world! 🎉', trophies:'My trophies', trophyTitle:n=>`${n}'s trophies`, howOld:'How old is our hero?', years:a=>`${a} years old`,
+       allDone:'You finished every world! 🎉', trophies:'My trophies', trophyTitle:n=>`${n}'s trophies`, howOld:'How old is our hero?', setupHi:"Welcome! Let's get ready for the adventure.", whatName:"What is your child's name?", namePh:'Name (optional)', years:a=>`${a} years old`,
        gateQ:(a,b)=>`For grown-ups: what is ${a} × ${b}?`, parents:"Parents' Corner", settings:'Settings', nameEn:'Name in English', nameHe:'Name in Hebrew',
        level:'Level (age)', progress:'Progress', progressNote:(a)=>`English trail, age ${a}. Each language keeps its own progress.`, firstTry:'The % shows how often he answered right on the first try.',
        needs:'Needs practice', none:'Not played yet', allGood:'No weak spots yet. Keep playing!', reset:'Reset this progress',
@@ -1401,9 +1403,9 @@ const T2 = {
        voiceTip:'For a better voice: on iPad go to Settings → Accessibility → Spoken Content → Voices and download an "Enhanced" or "Premium" voice. On Android, install "Speech Services by Google" and download its voices. Then come back and pick it here.',
        resetDone:'Progress reset.', device:'Progress is saved on this device and browser only. Clearing browser data or using a private window erases it.', back:'Back to the game' },
   he:{ hello:n=>`שלום ${n}! מוכן להרפתקה?`, dataH:'נתוני שימוש', dataShare:'שיתוף נתוני שימוש אנונימיים', off:'כבוי', on:'פעיל',
-       dataNote:'כשהאפשרות פעילה, המשחק שולח אירועים אנונימיים (כמו "סיום תחנה" או "מענה על שאלה") כדי לשפר אותו. הוא לעולם לא שולח שמות, טקסט שהוקלד או כתובות IP. כבוי כברירת מחדל.',
+       dataNote:'כשהאפשרות פעילה, המשחק שולח אירועים אנונימיים (כמו "סיום תחנה" או "מענה על שאלה") כדי לשפר אותו. הוא לעולם לא שולח שמות, טקסט שהוקלד או כתובות IP. פעיל כברירת מחדל; אפשר לכבות כאן בכל רגע.',
        dataOff:'נתוני שימוש לא הוגדרו בעותק הזה של המשחק, ולכן שום דבר לא נשלח.', practice:g=>`תרגול עם ${g}`, practiceOffer:'הכנתי לך סבב תרגול מיוחד עם מה שקשה. גע בכפתור התרגול!', practiceDone:n=>`תרגול מצוין, ${n}! הדברים הקשים נהיים קלים יותר.`, lvUp:'אתה ממש משתפר בזה! בפעם הבאה זה יהיה קצת יותר מאתגר 🚀', skillsH:'מיומנויות (המשחק מתאים אותן אוטומטית)', lvHarder:'מאתגר יותר', lvEasier:'קל יותר', lvOn:'ברמה', locked:'סיים את כל התחנות כדי לפתוח את האוצר!', openIt:'גע כדי לפתוח את האוצר!', guideHi:(n,g)=>{ const f=(g===GUIDES.science||g===GUIDES.feelings); return `שלום ${n}! אני ${g.name.he} ${g.kind.he}, ${f?'המדריכה':'המדריך'} שלך כאן. גע בתחנה הראשונה ויוצאים לדרך!`; }, welcome:(n,s)=>`ברוך שובך, ${n}! יש לך ${s} כוכבים.`, welcome0:n=>`ברוך שובך, ${n}! ממשיכים הלאה.`, cont:'ממשיכים בהרפתקה', start:'מתחילים בהרפתקה',
-       allDone:'סיימת את כל העולמות! 🎉', trophies:'הגביעים שלי', trophyTitle:n=>`הגביעים של ${n}`, howOld:'בן כמה הגיבור שלנו?', years:a=>`בן ${a}`,
+       allDone:'סיימת את כל העולמות! 🎉', trophies:'הגביעים שלי', trophyTitle:n=>`הגביעים של ${n}`, howOld:'בן כמה הגיבור שלנו?', setupHi:'ברוכים הבאים! בואו נתכונן להרפתקה.', whatName:'מה שם הילד או הילדה?', namePh:'שם (לא חובה)', years:a=>`בן ${a}`,
        gateQ:(a,b)=>`למבוגרים: כמה זה ${a} × ${b}?`, parents:'פינת ההורים', settings:'הגדרות', nameEn:'השם באנגלית', nameHe:'השם בעברית',
        level:'רמה (גיל)', progress:'התקדמות', progressNote:(a)=>`המסלול בעברית, גיל ${a}. לכל שפה יש התקדמות משלה.`, firstTry:'האחוז מראה כמה פעמים ענה נכון כבר בניסיון הראשון.',
        needs:'כדאי לתרגל', none:'עוד לא שוחק', allGood:'אין עדיין נקודות חלשות. ממשיכים לשחק!', reset:'איפוס ההתקדמות הזאת',
@@ -1456,10 +1458,14 @@ function home(){
   age=null; current=home; setWorldBg('home');
   if(!savedAge){   // first time: ask the hero's age once (it can be changed later in the Parents' Corner)
     app.innerHTML = topbar(false) + `
-    <div class="hero pop"><div class="guide">${GUIDE}</div><h1>${t().title}</h1><p>${u().howOld}</p></div>
+    <div class="hero pop"><div class="guide">${GUIDE}</div><h1>${t().title}</h1><p>${u().setupHi}</p></div>
+    <div class="namebox setup"><label for="kidname">${u().whatName}</label><input id="kidname" maxlength="14" autocomplete="off" autocapitalize="words" placeholder="${u().namePh}" value="${esc(names[lang]||'')}"></div>
+    <p class="setupq">${u().howOld}</p>
     <div class="ages">${[4,5,6,7].map(a=>`<button class="age ${LV()[a].cls}" data-age="${a}"><span class="em">${['🐣','⛵','🧭','🎖️'][a-4]}</span><span class="t">${u().years(a)}</span></button>`).join('')}</div>`;
     bindTop(); bindPC();
-    app.querySelectorAll('.age').forEach(b=>b.onclick=()=>{ savedAge=+b.dataset.age; store.set('age',savedAge); track('Age Level Set',{age_level:savedAge, source:'first_launch'}); syncUser(); tone([520,780],.08); home(); });
+    app.querySelectorAll('.age').forEach(b=>b.onclick=()=>{
+      const typed=($('#kidname').value||'').trim(); if(typed){ names[lang]=typed; store.set('names',names); }   // the name stays on this device only
+      savedAge=+b.dataset.age; store.set('age',savedAge); track('Age Level Set',{age_level:savedAge, source:'first_launch'}); syncUser(); tone([520,780],.08); home(); });
     return;
   }
   const stars=totalStars(), nx=nextStation();
@@ -1565,6 +1571,7 @@ function parents(msg=''){
     save(); store.set('stats',stats); track('Progress Reset',{scope:'all'}); syncUser(); parents(u().resetDone); });
   $('#bk').onclick=home;
   app.querySelectorAll('#consent .chip').forEach(b=>b.onclick=()=>{ const on=b.dataset.v==='true';
+    if(!on) track('Analytics Turned Off');   // sent just before sharing stops, so opt-outs can be counted
     if(window.BayAnalytics) window.BayAnalytics.setConsent(on); if(on){ track('Analytics Consent Given'); syncUser(); } parents(); });
 }
 
@@ -1808,10 +1815,22 @@ function hideBuddy(){ const b=document.getElementById('buddy'); if(b){ b.hidden=
 function buddySay(text, opt={}){
   const b=buddyEl(); if(b.hidden) return;
   b.querySelector('#bbl').textContent = text; b.classList.add('talk');
+  placeBubble(b);
   if(opt.hop){ const f=b.querySelector('.buddy'); f.classList.remove('hop'); void f.offsetWidth; f.classList.add('hop'); }
   if(opt.speak!==false) speak(text);
   clearTimeout(buddyHideT); buddyHideT=setTimeout(()=>b.classList.remove('talk'), Math.max(3500, text.length*70));
 }
+/* the speech bubble must never cover something a child taps: if it would, it moves to the top of the screen */
+const TAPPABLE = '#app button:not([disabled]), #app .ans, #app canvas, #app input, #app .bub, #app .tile, #app .slot, #app .mitem, #app .magnet, #app .cr.dr, #app .bin, #app .pickit, #app .tank';
+function placeBubble(b){
+  const bb=b.querySelector('#bbl'); b.classList.remove('bbl-top');
+  const covers = () => { const r=bb.getBoundingClientRect();
+    return [...document.querySelectorAll(TAPPABLE)].some(el=>{ const e=el.getBoundingClientRect(); return e.width && e.height && e.bottom>0 && e.top<innerHeight && !(e.right<r.left||e.left>r.right||e.bottom<r.top||e.top>r.bottom); }); };
+  if(covers()) b.classList.add('bbl-top');
+}
+/* any tap outside the guide closes the bubble straight away */
+document.addEventListener('pointerdown', e=>{ const b=document.getElementById('buddy'); if(b && !e.target.closest('#buddy')) b.classList.remove('talk'); }, true);
+addEventListener('scroll', ()=>{ const b=document.getElementById('buddy'); if(b && b.classList.contains('talk')) placeBubble(b); }, {passive:true});
 function armIdle(){   // if a question sits unanswered for a while, the guide offers help
   clearTimeout(idleT); const here=qIdx, qs0=qs;
   idleT=setTimeout(()=>{ if(busy || qs!==qs0 || qIdx!==here || !document.querySelector('.qcard')) return;

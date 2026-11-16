@@ -7,7 +7,7 @@ Event names use **Title Case "Object Action"**; property names use **snake_case*
 
 | Rule | How it is enforced |
 |---|---|
-| Parental opt-in, off by default | Nothing is sent until a parent turns **Share anonymous usage data** on in the Parents' Corner (behind a grown-up maths check). The choice is stored in `localStorage` (`bay2_analytics_consent`). Turning it off calls `setOptOut(true)` and drops queued events. |
+| Parent control, on by default | Sharing is on unless a parent turns **Share anonymous usage data** off in the Parents' Corner (behind a grown-up maths check). The choice is stored in `localStorage` (`bay2_analytics_consent`); turning it off calls `setOptOut(true)` and drops queued events. The default is `analyticsOnByDefault` in `src/config.js`: **set it to `false` (parent must opt in) before offering the game to the public**, since COPPA and GDPR-K treat device IDs collected from young children as personal data that needs a parent's consent first. |
 | No personal data | The child's name, typed text and free-form content are never sent. No `user_id` is set; Amplitude's random device ID is the only identifier. |
 | No IP address | `trackingOptions.ipAddress: false`. Also turn on IP filtering / "Do not store IP" in the Amplitude project settings. |
 | Minimal auto-capture | Only `sessions` is auto-captured. Page views, element clicks, forms, file downloads and marketing attribution are off. |
@@ -46,7 +46,8 @@ Before going public, add a short privacy notice for parents and check it against
 | `Progress Reset` | A parent resets progress | `scope` (`age` \| `all`), `age_level` |
 | `Voice Toggled` | Sound button tapped | `voice_on` |
 | `Voice Speed Changed` | Speed changed in Parents' Corner | `speed` (`0.8` \| `1`) |
-| `Analytics Consent Given` | A parent turns sharing on (first event after consent) | – |
+| `Analytics Consent Given` | A parent turns sharing back on | – |
+| `Analytics Turned Off` | A parent turns sharing off (sent just before it stops) | – |
 | `session_start` / `session_end` | Amplitude auto-capture | – |
 
 `world` values: `math` (Numbers Bay), `letters` (Letters Island), `science` (Discoveries Reef), `logic` (Puzzles Port), `feelings` (Feelings Lagoon).
@@ -76,6 +77,6 @@ Before going public, add a short privacy notice for parents and check it against
 ## Verifying events
 
 1. Put your API key in `src/config.js`, run `npm start`, and open `http://localhost:8080/?debug_analytics=1`.
-2. In the Parents' Corner, turn **Share anonymous usage data** on.
+2. Sharing is on by default (check that **Share anonymous usage data** shows On in the Parents' Corner).
 3. Play a station. Each event is logged in the browser console as `[analytics] track …`.
 4. In Amplitude, open **User Lookup** (or the ingestion debugger) and find the device to see the events arrive.

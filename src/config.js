@@ -13,6 +13,10 @@ window.ADVENTURE_BAY_CONFIG = {
   // Amplitude Browser SDK 2, pinned to an exact version
   sdkUrl: 'https://cdn.jsdelivr.net/npm/@amplitude/analytics-browser@2.11.1/lib/scripts/amplitude-min.js',
 
+  // Anonymous usage data is shared unless a parent turns it off in the Parents' Corner.
+  // Set to false to require a parent to turn it on first (recommended for apps offered to the public, see docs/tracking-plan.md).
+  analyticsOnByDefault: true,
+
   // true = log every event to the browser console (same as adding ?debug_analytics=1 to the URL)
   debug: false
 };

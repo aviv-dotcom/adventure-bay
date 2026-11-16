@@ -36,12 +36,12 @@ It is a static site: `index.html` plus `src/`. Any static host works.
 
 ## Analytics (Amplitude)
 
-Analytics is **off** until you add a key **and** a parent opts in.
+Analytics is **off** until you add a key. Once a key is set, anonymous sharing is **on by default** and a parent can turn it off in the Parents' Corner (`analyticsOnByDefault` in `src/config.js`; set it to `false` to require a parent to opt in, which is recommended before offering the game publicly).
 
 1. Create a project in Amplitude and copy its **API key**.
 2. Put it in `src/config.js` (`amplitudeApiKey`). Set `serverZone: 'EU'` if your organization uses the EU data center.
 3. In Amplitude's project settings, turn on IP filtering (the SDK already sends no IP address).
-4. Deploy, open the game, go to **🔒 Parents' Corner → Usage data → On**.
+4. Deploy and open the game. Sharing is on by default (see **🔒 Parents' Corner → Usage data**).
 5. Check events with `?debug_analytics=1` (they are logged in the console) and in Amplitude's **User Lookup**.
 
 All events, properties, privacy rules and suggested charts are in [docs/tracking-plan.md](docs/tracking-plan.md).
@@ -64,7 +64,7 @@ docs/tracking-plan.md Amplitude events, properties and privacy rules
 
 ## Saved data
 
-Progress, stars, skill levels, settings and the analytics choice are stored in the browser's `localStorage` (keys starting with `bay2_`), per device. Clearing site data resets the game.
+The child's name (typed by a parent on first launch, optional), progress, stars, skill levels, settings and the analytics choice are stored in the browser's `localStorage` (keys starting with `bay2_`), per device. Clearing site data resets the game.
 
 ## Testing on localhost
 
