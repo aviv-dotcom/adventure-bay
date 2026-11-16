@@ -24,6 +24,7 @@ npm start
 Open http://localhost:8080. On a tablet on the same Wi-Fi, use your computer's local IP address instead of `localhost`.
 
 ```bash
+npm run stamp   # before committing a release: version the file links so players get the new files right away
 npm run check   # syntax-check the scripts
 npm run build   # write dist/index.html (one self-contained file) and dist/artifact.html
 ```

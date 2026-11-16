@@ -5,8 +5,8 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 const read = p => readFileSync(new URL('../' + p, import.meta.url), 'utf8');
 const html = read('index.html');
 const inline = s => s
-  .replace(/<link rel="stylesheet" href="src\/styles\.css">/, () => `<style>\n${read('src/styles.css')}</style>`)
-  .replace(/<script src="(src\/[\w.]+\.js)"><\/script>/g, (_, f) => `<script>\n${read(f).replace(/<\/script/gi, '<\\/script')}</script>`);
+  .replace(/<link rel="stylesheet" href="src\/styles\.css(?:\?v=[\w-]+)?">/, () => `<style>\n${read('src/styles.css')}</style>`)
+  .replace(/<script src="(src\/[\w.]+\.js)(?:\?v=[\w-]+)?"><\/script>/g, (_, f) => `<script>\n${read(f).replace(/<\/script/gi, '<\\/script')}</script>`);
 const full = inline(html);
 mkdirSync(new URL('../dist/', import.meta.url), { recursive: true });
 writeFileSync(new URL('../dist/index.html', import.meta.url), full);
