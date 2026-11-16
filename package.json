@@ -1,0 +1,13 @@
+{
+  "name": "adventure-bay",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A tablet-friendly learning adventure for kids aged 4–7 in English and Hebrew.",
+  "type": "module",
+  "scripts": {
+    "start": "node scripts/serve.mjs",
+    "check": "node scripts/check.mjs",
+    "build": "node scripts/check.mjs && node scripts/build.mjs"
+  },
+  "engines": { "node": ">=18" }
+}

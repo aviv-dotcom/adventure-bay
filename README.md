@@ -1,0 +1,71 @@
+# Adventure Bay · מפרץ ההרפתקאות
+
+A tablet-friendly learning adventure for children aged **4–7**, in **English and Hebrew**.
+A guide animal leads the child through five worlds; each age has its own stations, questions and hands-on finger tasks, and every skill adapts to how the child is doing.
+
+| World | Guide | Topics |
+|---|---|---|
+| 🧮 Numbers Bay · מפרץ המספרים | 🦜 Coco | Counting, shapes, adding and taking away, place value, time, money, fractions |
+| 📖 Letters Island · אי האותיות | 🦉 Ollie | Rhymes, letters and sounds, tracing, building words, reading, short stories |
+| 🔬 Discoveries Reef · שונית התגליות | 🐢 Shelly | Senses, animals, plants, weather, float or sink, magnets, food chains, materials, calendar |
+| 🧩 Puzzles Port · נמל החידות | 🦊 Finn | Arrow coding, debugging, loops, if/then rules, sequencing, predicting code |
+| 💛 Feelings Lagoon · לגונת הרגשות | 🐰 Luna | Naming feelings, kindness, sharing fairly, calm breathing, problem solving |
+
+Content follows US Common Core / NGSS, the UK EYFS and Key Stage 1, and the Israeli kindergarten and first/second-grade programmes.
+
+## Run it
+
+No dependencies, just Node 18+.
+
+```bash
+npm start
+```
+
+Open http://localhost:8080. On a tablet on the same Wi-Fi, use your computer's local IP address instead of `localhost`.
+
+```bash
+npm run check   # syntax-check the scripts
+npm run build   # write dist/index.html (one self-contained file) and dist/artifact.html
+```
+
+## Deploy
+
+It is a static site: `index.html` plus `src/`. Any static host works.
+
+**GitHub Pages:** push the repository, then **Settings → Pages → Deploy from a branch → `main` / root**.
+
+## Analytics (Amplitude)
+
+Analytics is **off** until you add a key **and** a parent opts in.
+
+1. Create a project in Amplitude and copy its **API key**.
+2. Put it in `src/config.js` (`amplitudeApiKey`). Set `serverZone: 'EU'` if your organization uses the EU data center.
+3. In Amplitude's project settings, turn on IP filtering (the SDK already sends no IP address).
+4. Deploy, open the game, go to **🔒 Parents' Corner → Usage data → On**.
+5. Check events with `?debug_analytics=1` (they are logged in the console) and in Amplitude's **User Lookup**.
+
+All events, properties, privacy rules and suggested charts are in [docs/tracking-plan.md](docs/tracking-plan.md).
+
+> **Note:** when the game runs as a claude.ai artifact, the page can't make network requests, so analytics only works on your own hosting.
+
+## Project structure
+
+```
+index.html            page shell: loads the fonts, styles and scripts
+src/styles.css        all styles (themes, worlds, animations, light and dark mode)
+src/config.js         deployment settings: app version, Amplitude key and region
+src/analytics.js      privacy-first Amplitude bridge (window.BayAnalytics)
+src/game.js           the game: worlds, question makers, adaptive learning, guides, UI
+scripts/serve.mjs     local static server (npm start)
+scripts/build.mjs     single-file builds in dist/
+scripts/check.mjs     syntax check (npm run check, also run by CI)
+docs/tracking-plan.md Amplitude events, properties and privacy rules
+```
+
+## Saved data
+
+Progress, stars, skill levels, settings and the analytics choice are stored in the browser's `localStorage` (keys starting with `bay2_`), per device. Clearing site data resets the game.
+
+## Testing on localhost
+
+On `localhost`, `src/game.js` exposes `window.__adv` (`makeQ`, `setW`, `setA`, `LV`, `skills`) so you can generate thousands of questions from the browser console and check that every answer is among the choices. It is not exposed on any other host.
