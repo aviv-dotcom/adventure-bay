@@ -5,7 +5,7 @@ window.ADVENTURE_BAY_CONFIG = {
   appVersion: '1.0.0',
 
   // Amplitude → Settings → Projects → (your project) → General → API Key
-  amplitudeApiKey: '',
+  amplitudeApiKey: '231d357de64161a292eeac3717abee4f',
 
   // 'US' (default) or 'EU' if your Amplitude organization is hosted in the EU data center
   serverZone: 'US',
