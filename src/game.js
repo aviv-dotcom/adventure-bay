@@ -271,8 +271,10 @@ function gen(type, it, nOpt){
       q={t:L2(()=>'Which one does not belong?',()=>'מי לא שייך לקבוצה?'), visual:'', opts:shuffle([...three,odd]).map(e=>({label:cr(e),value:e})), ans:odd}; break; }
     case 'ordinal': { const line=shuffle(LINE_ANIMALS).slice(0,5); const k=rnd(0,4); const ans=line[k];
       const opts=shuffle([ans,...shuffle(line.filter(x=>x!==ans)).slice(0,nOpt-1)]);
-      q={t:L2(()=>`Which animal is ${ORD.en[k]} in line?`,()=>`איזו חיה היא ה${ORD.he[k]} בתור?`),
-         visual:`<div class="line"><span class="flag">🏁</span>${line.map(e=>cr(e)).join('')}</div>`, opts:opts.map(e=>({label:cr(e),value:e})), ans}; break; }
+      // counting starts at the flag: a "Start" label and an arrow show the direction (it flips in Hebrew, which reads right to left)
+      q={t:L2(()=>`Start at the flag 🏁. Which animal is ${ORD.en[k]} in line?`,()=>`מתחילים מהדגל 🏁. איזו חיה היא ה${ORD.he[k]} בתור?`),
+         visual:`<div class="line"><span class="lstart"><span class="flag">🏁</span><small>${he()?'מתחילים':'Start'}</small></span><span class="larrow" aria-hidden="true">${svgI('<path d="M3 12h16M13 5l7 7-7 7"/>')}</span>${line.map(e=>cr(e)).join('')}</div>`,
+         opts:opts.map(e=>({label:cr(e),value:e})), ans}; break; }
     case 'bond': { const k=rnd(1,9);   // make 10 (CCSS K.OA.4)
       q={t:L2(()=>'How many more to make 10?',()=>'כמה חסר כדי להגיע ל-10?'), visual:`<div class="tf">${Array.from({length:10},(_,i)=>`<span class="${i<k?'on':''}"></span>`).join('')}</div>`,
          opts:numOptions(10-k,nOpt,0,10), ans:10-k}; break; }

@@ -688,3 +688,10 @@ body.quiz .wrap{padding-bottom:12px}
   .shelfhead .huge{font-size:3.4rem}
 }
 @media (min-width:1280px){ .shelf{grid-template-columns:1fr 1fr 1fr} }
+/* "which animal is third in line": counting starts at the flag, the arrow shows which way (flipped in Hebrew) */
+.line .lstart{display:flex;flex-direction:column;align-items:center;line-height:1}
+.line .lstart .flag{font-size:1em}
+.line .lstart small{font-size:.32em;font-weight:800;color:var(--ink);background:var(--sun);border-radius:10px;padding:3px 8px;margin-top:4px;white-space:nowrap}
+.line .larrow{display:inline-flex;color:var(--coral,#e8604c);margin-inline:2px 8px}
+.line .larrow .ico{width:.8em;height:.8em;stroke-width:3.2}
+:root[dir="rtl"] .line .larrow .ico{transform:scaleX(-1)}
