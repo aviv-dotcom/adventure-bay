@@ -91,9 +91,18 @@ function loadVoices(){ try{ const vs=speechSynthesis.getVoices(); if(vs.length) 
   for(const l of ['en','he']) voices[l] = voiceLists[l].find(v=>v.name===voicePref[l]) || voiceLists[l][0] || null;
 }catch(e){} }
 try{ loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }catch(e){}
+/* Hebrew nikud for the speaker only (src/nikud.js, built by scripts/nikud.mjs): the screen stays plain, speech gets vowel marks */
+const NIKUD = window.NIKUD_HE || {words:{}, phrases:{}};
+const NIKUD_PHRASES = Object.keys(NIKUD.phrases).sort((a,b)=>b.length-a.length);
+function addNikud(s){
+  for(const p of NIKUD_PHRASES) if(s.includes(p)) s = s.split(p).join(NIKUD.phrases[p]);
+  return s.replace(/[א-ת֑-ׇ]+/g, w => /[֑-ׇ]/.test(w) ? w : (NIKUD.words[w] || w));
+}
 function prepSpeech(text, L){
   const H = L==='he';
-  let s = String(text).replace(/[️‍⃣]/g,'')   // emoji modifiers
+  let s = String(text).replace(/[️‍⃣]/g,'');   // emoji modifiers
+  if(H) s = addNikud(s);
+  s = s
     .replace(/−/g, H?' פחות ':' minus ').replace(/\+/g, H?' ועוד ':' plus ').replace(/×/g, H?' כפול ':' times ').replace(/=/g, H?' שווה ':' equals ')
     .replace(/(\d+):(30|00)/g, (m,h,mm)=> H ? `${h}${mm==='30'?' וחצי':''}` : `${h} ${mm==='30'?'thirty':"o'clock"}`)
     .replace(/[^\p{L}\p{M}\p{N}\s,.?!'׳״-]/gu,' ');      // keep \p{M}: Hebrew vowel marks (niqqud) guide pronunciation

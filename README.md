@@ -26,6 +26,7 @@ Open http://localhost:8080. On a tablet on the same Wi-Fi, use your computer's l
 ```bash
 npm run stamp   # before committing a release: version the file links so players get the new files right away
 npm run check   # syntax-check the scripts
+npm run nikud   # after changing Hebrew text: rebuild src/nikud.js, the vowel marks the speaker uses (hand fixes live in scripts/nikud.mjs)
 npm run build   # write dist/index.html (one self-contained file) and dist/artifact.html
 ```
 

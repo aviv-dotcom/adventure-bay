@@ -8,7 +8,8 @@
     "start": "node scripts/serve.mjs",
     "check": "node scripts/check.mjs",
     "build": "node scripts/check.mjs && node scripts/build.mjs",
-    "stamp": "node scripts/stamp.mjs"
+    "stamp": "node scripts/stamp.mjs",
+    "nikud": "node scripts/nikud.mjs"
   },
   "engines": {
     "node": ">=18"
