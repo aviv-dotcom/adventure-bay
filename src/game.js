@@ -75,7 +75,7 @@ function tone(freqs,dur=.12){
 const sfx = { good:()=>tone([660,880,1100]), bad:()=>tone([300,240],.16), win:()=>tone([523,659,784,1046,1318],.13) };
 /* ---------- voice: pick the best installed voice, keep Hebrew vowel marks, slow down short items ---------- */
 let voiceOn = store.get('voice', true);
-let voiceSpeed = store.get('vspeed', 1);              // 0.8 = slow, 1 = normal (Parents' Corner)
+let voiceSpeed = store.get('vspeed', .8);             // 0.8 = slow (default), 1 = normal (Parents' Corner)
 let voicePref = store.get('vpref', {en:'', he:''});    // a voice the parent picked, by name
 let voices = {en:null, he:null}, voiceLists = {en:[], he:[]}, voicesLoaded = false;
 const scoreVoice = v => { const n=v.name; let s=0;
