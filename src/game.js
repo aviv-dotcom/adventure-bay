@@ -1844,10 +1844,12 @@ function buddySay(text, opt={}){
 /* the speech bubble must never cover something a child taps: if it would, it moves to the top of the screen */
 const TAPPABLE = '#app button:not([disabled]), #app .ans, #app canvas, #app input, #app .bub, #app .tile, #app .slot, #app .mitem, #app .magnet, #app .cr.dr, #app .bin, #app .pickit, #app .tank';
 function placeBubble(b){
-  const bb=b.querySelector('#bbl'); b.classList.remove('bbl-top');
+  // the bubble always stays by the guide: above it, or beside it when that would cover a button
+  // (it never blocks taps either way: they pass through it, and any tap closes it)
+  const bb=b.querySelector('#bbl'); b.classList.remove('bbl-side');
   const covers = () => { const r=bb.getBoundingClientRect();
     return [...document.querySelectorAll(TAPPABLE)].some(el=>{ const e=el.getBoundingClientRect(); return e.width && e.height && e.bottom>0 && e.top<innerHeight && !(e.right<r.left||e.left>r.right||e.bottom<r.top||e.top>r.bottom); }); };
-  if(covers()) b.classList.add('bbl-top');
+  if(covers()) b.classList.add('bbl-side');
 }
 /* any tap outside the guide closes the bubble straight away */
 document.addEventListener('pointerdown', e=>{ const b=document.getElementById('buddy'); if(b && !e.target.closest('#buddy')) b.classList.remove('talk'); }, true);
