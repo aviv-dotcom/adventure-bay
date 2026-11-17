@@ -365,7 +365,7 @@ function makeDraggable(item, tray, bin, basket){
     const r=item.getBoundingClientRect(), sx=e.clientX, sy=e.clientY, ox=sx-r.left, oy=sy-r.top; let moved=false;
     const mv=ev=>{ if(!moved && Math.hypot(ev.clientX-sx,ev.clientY-sy)<8) return;
       if(!moved){ moved=true; item.classList.add('dragging'); }
-      item.style.left=(ev.clientX-ox)+'px'; item.style.top=(ev.clientY-oy)+'px';
+      item.style.left=(ev.clientX-ox)/appZoom()+'px'; item.style.top=(ev.clientY-oy)/appZoom()+'px';
       const b=basket.getBoundingClientRect(); basket.classList.toggle('hot', ev.clientX>=b.left&&ev.clientX<=b.right&&ev.clientY>=b.top&&ev.clientY<=b.bottom); };
     const up=ev=>{ item.removeEventListener('pointermove',mv); item.removeEventListener('pointerup',up); item.removeEventListener('pointercancel',up);
       item.classList.remove('dragging'); item.style.left=item.style.top=''; basket.classList.remove('hot');
@@ -775,7 +775,7 @@ function mountSort(el, bins, items){
     if(busy||item.classList.contains('placed')) return; e.preventDefault(); try{item.setPointerCapture(e.pointerId)}catch(_){}
     const r=item.getBoundingClientRect(), sx=e.clientX, sy=e.clientY, ox=sx-r.left, oy=sy-r.top; let moved=false;
     const mv=ev=>{ if(!moved&&Math.hypot(ev.clientX-sx,ev.clientY-sy)<8) return; if(!moved){ moved=true; item.classList.add('dragging'); }
-      item.style.left=(ev.clientX-ox)+'px'; item.style.top=(ev.clientY-oy)+'px'; const h=binAt(ev.clientX,ev.clientY); binEls.forEach(b=>b.classList.toggle('hot',b===h)); };
+      item.style.left=(ev.clientX-ox)/appZoom()+'px'; item.style.top=(ev.clientY-oy)/appZoom()+'px'; const h=binAt(ev.clientX,ev.clientY); binEls.forEach(b=>b.classList.toggle('hot',b===h)); };
     const up=ev=>{ item.removeEventListener('pointermove',mv); item.removeEventListener('pointerup',up); item.removeEventListener('pointercancel',up);
       item.classList.remove('dragging'); item.style.left=item.style.top=''; binEls.forEach(b=>b.classList.remove('hot'));
       if(moved) drop(item, binAt(ev.clientX,ev.clientY));
@@ -811,7 +811,7 @@ function mountMagnet(el, metals, others){
       else if(!it.classList.contains('nope')){ it.classList.add('nope'); tone([200],.08); setTimeout(()=>it.classList.remove('nope'),500); } } }); };
   mag.addEventListener('pointerdown',e=>{ if(busy) return; e.preventDefault(); try{mag.setPointerCapture(e.pointerId)}catch(_){}
     const r=mag.getBoundingClientRect(), ox=e.clientX-r.left, oy=e.clientY-r.top; mag.classList.add('dragging');
-    const mv=ev=>{ mag.style.left=(ev.clientX-ox)+'px'; mag.style.top=(ev.clientY-oy)+'px'; touch(ev.clientX,ev.clientY); };
+    const mv=ev=>{ mag.style.left=(ev.clientX-ox)/appZoom()+'px'; mag.style.top=(ev.clientY-oy)/appZoom()+'px'; touch(ev.clientX,ev.clientY); };
     const up=()=>{ mag.removeEventListener('pointermove',mv); mag.removeEventListener('pointerup',up); mag.removeEventListener('pointercancel',up); mag.classList.remove('dragging'); mag.style.left=mag.style.top=''; };
     mag.addEventListener('pointermove',mv); mag.addEventListener('pointerup',up); mag.addEventListener('pointercancel',up); });
   items.forEach(it=>it.addEventListener('click',()=>{ const r=it.getBoundingClientRect(); touch(r.left+r.width/2, r.top+r.height/2); }));   // tapping an object tests it too
@@ -1099,7 +1099,7 @@ function mountShare(el, total, friends){
     if(busy) return; e.preventDefault(); try{item.setPointerCapture(e.pointerId)}catch(_){}
     const r=item.getBoundingClientRect(), sx=e.clientX, sy=e.clientY, ox=sx-r.left, oy=sy-r.top; let moved=false;
     const mv=ev=>{ if(!moved&&Math.hypot(ev.clientX-sx,ev.clientY-sy)<8) return; if(!moved){ moved=true; item.classList.add('dragging'); }
-      item.style.left=(ev.clientX-ox)+'px'; item.style.top=(ev.clientY-oy)+'px'; const h=binAt(ev.clientX,ev.clientY); binEls.forEach(b=>b.classList.toggle('hot',b===h)); };
+      item.style.left=(ev.clientX-ox)/appZoom()+'px'; item.style.top=(ev.clientY-oy)/appZoom()+'px'; const h=binAt(ev.clientX,ev.clientY); binEls.forEach(b=>b.classList.toggle('hot',b===h)); };
     const up=ev=>{ item.removeEventListener('pointermove',mv); item.removeEventListener('pointerup',up); item.removeEventListener('pointercancel',up);
       item.classList.remove('dragging'); item.style.left=item.style.top=''; binEls.forEach(b=>b.classList.remove('hot'));
       if(moved) place(item, binAt(ev.clientX,ev.clientY));
@@ -1604,12 +1604,11 @@ function startStation(i){
   const make = tp => makeQ(tp, s.items ? pick(s.items) : null);
   qs = [];
   for(const tp of L.plan[i]){   // avoid the same question twice in one station
-    let q, tries=0;
-    do { q = make(tp); } while(tries++<8 && qs.some(p=>p.t()===q.t() && (p.visual||'')===(q.visual||'')));
-    qs.push(q);
+    qs.push(pickFresh(()=>make(tp), qs));
   }
   const weak = weakSkills(world, age).filter(w=>!qs.some(q=>q.skill===w.sk));   // a weak skill comes back for review
-  if(weak.length && qs.length>1 && Math.random()<.6){ const w=pick(weak); qs[rnd(1,qs.length-1)] = make(w.tok); }
+  if(weak.length && qs.length>1 && Math.random()<.6){ const w=pick(weak); const slot=rnd(1,qs.length-1); qs[slot] = pickFresh(()=>make(w.tok), qs.filter((_,i)=>i!==slot)); }
+  rememberQs(qs);
   stStart=Date.now();
   track('Station Started',{world, station_index:i, station_name:s.name.en, review_question:qs.some(q=>!L.plan[i].includes(q.tok))});
   showQ(true);
@@ -1619,9 +1618,8 @@ function startPractice(){   // a bonus round made of this world's weakest skills
   stIdx=-1; qIdx=0; stationStars=0;
   const withItems = ST().filter(x=>x.items), items = withItems.length ? pick(pick(withItems).items) : null;
   qs = [];
-  for(let i=0;i<4;i++){ const tp=weak[i%weak.length].tok; let q, tries=0;
-    do { q = makeQ(tp, items); } while(tries++<8 && qs.some(p=>p.t()===q.t() && (p.visual||'')===(q.visual||'')));
-    qs.push(q); }
+  for(let i=0;i<4;i++){ const tp=weak[i%weak.length].tok; qs.push(pickFresh(()=>makeQ(tp, items), qs)); }
+  rememberQs(qs);
   stStart=Date.now();
   track('Practice Started',{world, skills:weak.map(w=>w.sk), skill_count:weak.length});
   showQ(true);
@@ -1658,6 +1656,8 @@ function showQ(fresh){
   if(vis) vis.onclick=e=>{ const c=e.target.closest('.cr'); if(!c||c.classList.contains('gone')) return;
     c.classList.remove('boing'); void c.offsetWidth; c.classList.add('boing'); tone([500+Math.random()*500],.08);
     c.addEventListener('animationend',()=>c.classList.remove('boing'),{once:true}); };
+  document.body.classList.add('quiz');
+  { const sg=$('.qcard .story .g'); if(sg){ sg.setAttribute('role','button'); sg.setAttribute('aria-label',G().name[lang]); sg.onclick=buddyTap; } }
   if(q.mount) q.mount($('#task'));
   else app.querySelectorAll('.ans').forEach(b=>b.onclick=()=>answer(b, q.opts[+b.dataset.i].value));
   speak(qIdx===0 ? `${s.intro[lang]} ${spk()}` : spk());
@@ -1798,8 +1798,7 @@ function buddyEl(){
   if(!b){ b=document.createElement('div'); b.id='buddy';
     b.innerHTML=`<div class="bbl" id="bbl" role="status" aria-live="polite"></div><button class="buddy" id="buddyBtn" aria-label="Talk to the guide"><span class="bface" id="bface"></span></button>`;
     document.body.appendChild(b);
-    b.querySelector('#buddyBtn').onclick=()=>{ const lines = buddyTheme==='home' ? HOME_LINES[lang].map(f=>f(nm())) : G(buddyTheme).facts[lang];
-      buddySay(pickLine(lines), {hop:true}); tone([700,950],.07); track('Guide Tapped',{guide:buddyTheme}); };
+    b.querySelector('#buddyBtn').onclick=buddyTap;
   }
   return b;
 }
@@ -1812,7 +1811,20 @@ function showBuddy(theme){
   b.querySelector('#buddyBtn').setAttribute('aria-label', `${g.name[lang]} ${g.kind[lang]}`);
 }
 function hideBuddy(){ const b=document.getElementById('buddy'); if(b){ b.hidden=true; b.classList.remove('talk'); } clearTimeout(idleT); }
+function buddyTap(){ const lines = buddyTheme==='home' ? HOME_LINES[lang].map(f=>f(nm())) : G(buddyTheme).facts[lang];
+  buddySay(pickLine(lines), {hop:true}); tone([700,950],.07); track('Guide Tapped',{guide:buddyTheme}); }
 function buddySay(text, opt={}){
+  /* during a question the guide talks in the story bubble at the top of the card: it can never cover an answer */
+  const story = document.body.classList.contains('quiz') && document.querySelector('.qcard .story');
+  if(story){
+    const bub=story.querySelector('.bubble');
+    if(bub.dataset.orig===undefined) bub.dataset.orig=bub.innerHTML;
+    bub.textContent=text; bub.classList.add('talking'); fitScreen();
+    if(opt.hop){ const g=story.querySelector('.g'); g.classList.remove('hop'); void g.offsetWidth; g.classList.add('hop'); }
+    if(opt.speak!==false) speak(text);
+    clearTimeout(buddyHideT); buddyHideT=setTimeout(()=>{ if(document.body.contains(bub)){ bub.innerHTML=bub.dataset.orig; delete bub.dataset.orig; bub.classList.remove('talking'); fitScreen(); } }, Math.max(4500, text.length*75));
+    return;
+  }
   const b=buddyEl(); if(b.hidden) return;
   b.querySelector('#bbl').textContent = text; b.classList.add('talk');
   placeBubble(b);
@@ -1903,8 +1915,11 @@ const BG = {
     + many(9,i=>fxEl('fx-weed', ['🌷','🌸','🌻','🌼'][i%4], `left:${(i*11+FXR(0,5)).toFixed(1)}%;bottom:-4px;${sz(FXR(3.4,4.8))};--del:${(-FXR(0,4)).toFixed(1)}s`))
 };
 let bgKey = '';
-function setWorldBg(theme){
+function setWorldBg(theme){   // called at the start of every screen
   showBuddy(theme);
+  document.body.classList.remove('quiz');
+  window.scrollTo(0,0);                                         // every new screen starts at the top
+  requestAnimationFrame(()=>requestAnimationFrame(fitScreen));   // after the new screen is drawn
   const key = theme + '|' + lang;
   if(key === bgKey) return;          // same scene: keep the animation running smoothly between screens
   bgKey = key;
@@ -1914,6 +1929,37 @@ function setWorldBg(theme){
   document.body.classList.add('w-'+theme);
   layer.innerHTML = (BG[theme]||BG.home)();
 }
+
+/* ---------- fit the whole screen to tablets: no scrolling ----------
+   On screens 600px+ wide, if a screen is taller than the window it is scaled down (CSS zoom, never below 60%).
+   Phones keep normal scrolling. Drag code divides by appZoom() so dragged items stay under the finger. */
+const appZoom = () => parseFloat(document.getElementById('app').style.zoom) || 1;
+function fitScreen(){
+  const app=document.getElementById('app'); if(!app) return;
+  app.style.zoom='';
+  if(innerWidth<600) return;
+  const cs=getComputedStyle(document.body), avail=innerHeight-parseFloat(cs.paddingTop)-parseFloat(cs.paddingBottom)-2;
+  const h=app.getBoundingClientRect().height;
+  if(h>avail) app.style.zoom=Math.max(0.6, avail/h).toFixed(3);
+}
+addEventListener('resize', ()=>requestAnimationFrame(fitScreen));
+try{ document.fonts.ready.then(()=>fitScreen()); }catch(e){}
+
+/* ---------- remember recent questions so the same one doesn't come back soon (per language, world and age) ---------- */
+const recentQ = store.get('recent', {});
+const qSig = q => { try{ return q.t()+'|'+(q.ans===undefined?'':String(q.ans)); }catch(e){ return ''; } };
+const recentKey = () => [lang,world,age].join('|');
+const isRecent = q => (recentQ[recentKey()]||[]).includes(qSig(q));
+/* make a question that is new: never twice in a station, not seen recently, else the one seen longest ago */
+function pickFresh(make, qs){
+  const r=recentQ[recentKey()]||[]; let best=null, bestScore=Infinity;
+  for(let i=0;i<16;i++){ const q=make(), s=qSig(q);
+    if(qs.some(p=>qSig(p)===s || (p.t()===q.t() && (p.visual||'')===(q.visual||'')))) continue;
+    const score=r.lastIndexOf(s);   // -1 = not seen recently (best); smaller = seen longer ago
+    if(score<bestScore){ best=q; bestScore=score; if(score<0) break; } }
+  return best || make();
+}
+function rememberQs(list){ const k=recentKey(), r=recentQ[k]||(recentQ[k]=[]); list.forEach(q=>{ const s=qSig(q); if(s) r.push(s); }); while(r.length>80) r.shift(); store.set('recent',recentQ); }
 
 /* ---------- treasure chest drawing: closed (locked, wobbles) and open (glowing, full of treasure) ---------- */
 function chestSvg(open){

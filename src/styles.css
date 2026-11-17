@@ -664,3 +664,20 @@ html{font-size:clamp(16px, 1.1vw + 11px, 19px)}
 /* a picture that is the whole answer gets bigger; the bubble keeps clear of the guide's circle */
 .ans > .cr:only-child{font-size:1.35em}
 #buddy{gap:14px}
+/* NO-SCROLL TABLET LAYOUT (see fitScreen in game.js) */
+body.quiz #buddy{display:none}
+body.quiz .wrap{padding-bottom:12px}
+.qcard .story .g{cursor:pointer;transform-origin:50% 90%}
+.qcard .story .g.hop{animation:boing .6s ease-out}
+.bubble.talking{background:var(--sun);color:#3a2a00;font-weight:800;font-size:1.25rem;animation:pop .3s ease-out}
+/* boat coding on wide screens: the sea on one side, the arrows and Go button on the other */
+@media (min-width:860px){
+  .task:has(> .grid:not(.static)){display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:28px;row-gap:14px;align-items:center;justify-items:center}
+  .task:has(> .grid:not(.static)) > .grid{grid-row:1 / span 3;width:min(380px,48vh)}
+  .task:has(> .grid:not(.static)) > :not(.grid){grid-column:2}
+}
+@media (min-width:860px){
+  .shelf{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .shelfhead{padding:16px}
+  .shelfhead .huge{font-size:3.4rem}
+}
