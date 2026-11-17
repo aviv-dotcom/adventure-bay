@@ -676,8 +676,13 @@ body.quiz .wrap{padding-bottom:12px}
   .task:has(> .grid:not(.static)) > .grid{grid-row:1 / span 3;width:min(380px,48vh)}
   .task:has(> .grid:not(.static)) > :not(.grid){grid-column:2}
 }
+/* computer screens: a wider game column (fitScreen also scales it up on big screens) */
+@media (min-width:1280px){
+  .wrap{max-width:1240px}
+}
 @media (min-width:860px){
   .shelf{display:grid;grid-template-columns:1fr 1fr;gap:12px}
   .shelfhead{padding:16px}
   .shelfhead .huge{font-size:3.4rem}
 }
+@media (min-width:1280px){ .shelf{grid-template-columns:1fr 1fr 1fr} }

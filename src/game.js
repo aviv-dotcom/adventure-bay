@@ -1928,7 +1928,7 @@ function setWorldBg(theme){   // called at the start of every screen
   showBuddy(theme);
   document.body.classList.remove('quiz');
   window.scrollTo(0,0);                                         // every new screen starts at the top
-  requestAnimationFrame(()=>requestAnimationFrame(fitScreen));   // after the new screen is drawn
+  requestAnimationFrame(()=>requestAnimationFrame(fitScreen)); setTimeout(fitScreen, 120);   // after the new screen is drawn (timer as a backup)
   const key = theme + '|' + lang;
   if(key === bgKey) return;          // same scene: keep the animation running smoothly between screens
   bgKey = key;
@@ -1948,10 +1948,12 @@ function fitScreen(){
   app.style.zoom='';
   if(innerWidth<600) return;
   const cs=getComputedStyle(document.body), avail=innerHeight-parseFloat(cs.paddingTop)-parseFloat(cs.paddingBottom)-2;
-  const h=app.getBoundingClientRect().height;
-  if(h>avail) app.style.zoom=Math.max(0.6, avail/h).toFixed(3);
+  // big computer screens: grow everything evenly (same size on every screen), up to 140%
+  const base = innerWidth>=1280 ? Math.min(1.4, Math.max(1, Math.min(innerWidth/1320, innerHeight/860))) : 1;
+  const h=app.getBoundingClientRect().height, z=Math.max(0.6, Math.min(base, avail/h));
+  if(Math.abs(z-1)>0.01) app.style.zoom=z.toFixed(3);
 }
-addEventListener('resize', ()=>requestAnimationFrame(fitScreen));
+addEventListener('resize', ()=>{ requestAnimationFrame(fitScreen); clearTimeout(fitScreen._t); fitScreen._t=setTimeout(fitScreen, 150); });
 try{ document.fonts.ready.then(()=>fitScreen()); }catch(e){}
 
 /* ---------- remember recent questions so the same one doesn't come back soon (per language, world and age) ---------- */
