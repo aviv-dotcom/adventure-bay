@@ -32,8 +32,21 @@ if(!/iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent)){ try{ const l=docume
 let lang = store.get('lang','en');
 const names = store.get('names',{en:'',he:''});   // no built-in name: a parent types the child's name on first launch
 /* the child's name in this language, else the name typed in the other language, else a friendly placeholder */
-const nm = () => names[lang] || names[lang==='he'?'en':'he'] || (lang==='he'?'חוקר':'Explorer');
+const nm = () => names[lang] || names[lang==='he'?'en':'he'] || (lang==='he'?(isGirl()?'חוקרת':'חוקר'):'Explorer');
+const hasName = () => !!(names.en || names.he);
 const he = () => lang==='he';
+/* boy or girl: the texts are written for a boy; for a girl, src/gender.js rewrites what is shown and spoken */
+let gender = store.get('gender', null);   // 'boy' | 'girl' | null (asked on first launch, changeable in the Parents' Corner)
+function isGirl(){ return gender==='girl'; }
+const forKid = (s, L=lang, speech=false) => (isGirl() && window.BayGender) ? window.BayGender.girl(String(s), L, nm(), speech) : s;
+function genderText(root){   // rewrite the text on screen for a girl (skips the Parents' Corner, which talks to grown-ups, and typing boxes)
+  if(!isGirl() || !window.BayGender || !root) return;
+  const walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => (!n.data.trim() || !n.parentElement || n.parentElement.closest('.pcard2, input, textarea, script, style')) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT });
+  for(let n=walk.nextNode(); n; n=walk.nextNode()){ const t=forKid(n.data); if(t!==n.data) n.data=t; }
+}
+try{ new MutationObserver(ms=>{ if(!isGirl()) return;
+  for(const m of ms){ if(m.type==='characterData') genderText(m.target.parentElement); else m.addedNodes.forEach(n=>genderText(n.nodeType===3?n.parentElement:n)); } })
+  .observe(document.body, {childList:true, subtree:true, characterData:true}); }catch(e){}
 const T = {
   en:{ title:'Adventure Bay', invite:n=>`Coco the parrot invites <b id="hn">${n}</b> on an adventure!`,
        math:'Numbers Bay', letters:'Letters Island', science:'Discoveries Reef', logic:'Puzzles Port', feelings:'Feelings Lagoon', reclap:["Let's drum it again!",'Listen and drum once more!'],
@@ -100,7 +113,7 @@ function addNikud(s){
 }
 function prepSpeech(text, L){
   const H = L==='he';
-  let s = String(text).replace(/[️‍⃣]/g,'');   // emoji modifiers
+  let s = forKid(String(text), L, true).replace(/[️‍⃣]/g,'');   // girl wording (with her vowels), then drop emoji modifiers
   if(H) s = addNikud(s);
   s = s
     .replace(/−/g, H?' פחות ':' minus ').replace(/\+/g, H?' ועוד ':' plus ').replace(/×/g, H?' כפול ':' times ').replace(/=/g, H?' שווה ':' equals ')
@@ -1404,7 +1417,7 @@ const T2 = {
   en:{ hello:n=>`Hi ${n}! Ready for an adventure?`, dataH:'Usage data', dataShare:'Share anonymous usage data', off:'Off', on:'On',
        dataNote:"When on, the game sends anonymous events (like “station completed” or “question answered”) to help improve it. It never sends names, typed text or IP addresses. On by default; you can turn it off here at any time.",
        dataOff:'Usage data is not set up in this copy of the game, so nothing is sent.', practice:g=>`Practice with ${g}`, practiceOffer:'I made a special practice round with the tricky ones. Tap the Practice button!', practiceDone:n=>`Great practice, ${n}! The tricky ones are getting easier.`, lvUp:"You're getting really good at this! Next time it'll be a bit more challenging 🚀", skillsH:'Skills (the game adjusts these automatically)', lvHarder:'Harder', lvEasier:'Easier', lvOn:'On level', locked:'Finish every stop to open the treasure!', openIt:'Tap to open the treasure!', guideHi:(n,g)=>`Hi ${n}! I'm ${g.name.en} ${g.kind.en}, your guide here. Tap the first stop and let's go!`, welcome:(n,s)=>`Welcome back, ${n}! You have ${s} stars.`, welcome0:n=>`Welcome back, ${n}! Let's keep going.`, cont:'Continue the adventure', start:'Start the adventure',
-       allDone:'You finished every world! 🎉', trophies:'My trophies', trophyTitle:n=>`${n}'s trophies`, howOld:'How old is our hero?', setupHi:"Welcome! Let's get ready for the adventure.", whatName:"What is your child's name?", namePh:'Name (optional)', years:a=>`${a} years old`,
+       allDone:'You finished every world! 🎉', trophies:'My trophies', trophyTitle:n=>`${n}'s trophies`, howOld:'How old is our hero?', setupHi:"Welcome! Let's get ready for the adventure.", whatName:"What is your child's name?", namePh:'Name', boyGirl:'Boy or girl?', boy:'Boy', girl:'Girl', needName:'Type the name first', needGender:'Choose boy or girl', kid:'Child', years:a=>`${a} years old`,
        gateQ:(a,b)=>`For grown-ups: what is ${a} × ${b}?`, parents:"Parents' Corner", settings:'Settings', nameEn:'Name in English', nameHe:'Name in Hebrew',
        level:'Level (age)', progress:'Progress', progressNote:(a)=>`English trail, age ${a}. Each language keeps its own progress.`, firstTry:'The % shows how often he answered right on the first try.',
        needs:'Needs practice', none:'Not played yet', allGood:'No weak spots yet. Keep playing!', reset:'Reset this progress',
@@ -1416,7 +1429,7 @@ const T2 = {
   he:{ hello:n=>`שלום ${n}! מוכן להרפתקה?`, dataH:'נתוני שימוש', dataShare:'שיתוף נתוני שימוש אנונימיים', off:'כבוי', on:'פעיל',
        dataNote:'כשהאפשרות פעילה, המשחק שולח אירועים אנונימיים (כמו "סיום תחנה" או "מענה על שאלה") כדי לשפר אותו. הוא לעולם לא שולח שמות, טקסט שהוקלד או כתובות IP. פעיל כברירת מחדל; אפשר לכבות כאן בכל רגע.',
        dataOff:'נתוני שימוש לא הוגדרו בעותק הזה של המשחק, ולכן שום דבר לא נשלח.', practice:g=>`תרגול עם ${g}`, practiceOffer:'הכנתי לך סבב תרגול מיוחד עם מה שקשה. גע בכפתור התרגול!', practiceDone:n=>`תרגול מצוין, ${n}! הדברים הקשים נהיים קלים יותר.`, lvUp:'אתה ממש משתפר בזה! בפעם הבאה זה יהיה קצת יותר מאתגר 🚀', skillsH:'מיומנויות (המשחק מתאים אותן אוטומטית)', lvHarder:'מאתגר יותר', lvEasier:'קל יותר', lvOn:'ברמה', locked:'סיים את כל התחנות כדי לפתוח את האוצר!', openIt:'גע כדי לפתוח את האוצר!', guideHi:(n,g)=>{ const f=(g===GUIDES.science||g===GUIDES.feelings); return `שלום ${n}! אני ${g.name.he} ${g.kind.he}, ${f?'המדריכה':'המדריך'} שלך כאן. גע בתחנה הראשונה ויוצאים לדרך!`; }, welcome:(n,s)=>`ברוך שובך, ${n}! יש לך ${s} כוכבים.`, welcome0:n=>`ברוך שובך, ${n}! ממשיכים הלאה.`, cont:'ממשיכים בהרפתקה', start:'מתחילים בהרפתקה',
-       allDone:'סיימת את כל העולמות! 🎉', trophies:'הגביעים שלי', trophyTitle:n=>`הגביעים של ${n}`, howOld:'בן כמה הגיבור שלנו?', setupHi:'ברוכים הבאים! בואו נתכונן להרפתקה.', whatName:'מה שם הילד או הילדה?', namePh:'שם (לא חובה)', years:a=>`בן ${a}`,
+       allDone:'סיימת את כל העולמות! 🎉', trophies:'הגביעים שלי', trophyTitle:n=>`הגביעים של ${n}`, howOld:'בן כמה הגיבור שלנו?', setupHi:'ברוכים הבאים! בואו נתכונן להרפתקה.', whatName:'מה שם הילד או הילדה?', namePh:'שם', boyGirl:'בן או בת?', boy:'בן', girl:'בת', needName:'כתבו קודם את השם', needGender:'בחרו בן או בת', kid:'הילד או הילדה', years:a=>`${isGirl()?'בת':'בן'} ${a}`,
        gateQ:(a,b)=>`למבוגרים: כמה זה ${a} × ${b}?`, parents:'פינת ההורים', settings:'הגדרות', nameEn:'השם באנגלית', nameHe:'השם בעברית',
        level:'רמה (גיל)', progress:'התקדמות', progressNote:(a)=>`המסלול בעברית, גיל ${a}. לכל שפה יש התקדמות משלה.`, firstTry:'האחוז מראה כמה פעמים ענה נכון כבר בניסיון הראשון.',
        needs:'כדאי לתרגל', none:'עוד לא שוחק', allGood:'אין עדיין נקודות חלשות. ממשיכים לשחק!', reset:'איפוס ההתקדמות הזאת',
@@ -1465,17 +1478,29 @@ function bindTop(backFn){
   }catch(e){} };
 }
 
+let setupDraft = null;   // the name being typed on the setup screen, kept while boy/girl is picked
 function home(){
   age=null; current=home; setWorldBg('home');
-  if(!savedAge){   // first time: ask the hero's age once (it can be changed later in the Parents' Corner)
+  if(!savedAge || !hasName() || !gender){   // first time: the hero's name, boy or girl, and age (all can be changed later in the Parents' Corner)
+    const typed0 = setupDraft ?? (names[lang] || names[lang==='he'?'en':'he'] || '');
     app.innerHTML = topbar(false) + `
     <div class="hero pop"><div class="guide">${GUIDE}</div><h1>${t().title}</h1><p>${u().setupHi}</p></div>
-    <div class="namebox setup"><label for="kidname">${u().whatName}</label><input id="kidname" maxlength="14" autocomplete="off" autocapitalize="words" placeholder="${u().namePh}" value="${esc(names[lang]||'')}"></div>
+    <div class="namebox setup"><label for="kidname">${u().whatName}</label><input id="kidname" maxlength="14" autocomplete="off" autocapitalize="words" placeholder="${u().namePh}" value="${esc(typed0)}" required></div>
+    <p class="setupq">${u().boyGirl}</p>
+    <div class="genders">${[['boy','👦'],['girl','👧']].map(([g,e])=>`<button class="gbtn ${gender===g?'on':''}" data-g="${g}" aria-pressed="${gender===g}"><span class="em">${e}</span><span class="t">${u()[g]}</span></button>`).join('')}</div>
     <p class="setupq">${u().howOld}</p>
-    <div class="ages">${[4,5,6,7].map(a=>`<button class="age ${LV()[a].cls}" data-age="${a}"><span class="em">${['🐣','⛵','🧭','🎖️'][a-4]}</span><span class="t">${u().years(a)}</span></button>`).join('')}</div>`;
+    <div class="ages">${[4,5,6,7].map(a=>`<button class="age ${LV()[a].cls} ${savedAge===a?'on':''}" data-age="${a}"><span class="em">${['🐣','⛵','🧭','🎖️'][a-4]}</span><span class="t">${u().years(a)}</span></button>`).join('')}</div>
+    <p class="need" id="need" role="alert"></p>`;
     bindTop(); bindPC();
+    const box=$('#kidname'), need=$('#need');
+    box.oninput=()=>{ setupDraft=box.value; box.classList.remove('miss'); need.textContent=''; };
+    const ask=(msg, el)=>{ need.textContent=msg; el.classList.remove('miss'); void el.offsetWidth; el.classList.add('miss'); tone([300,240],.12); speak(msg); };
+    app.querySelectorAll('.gbtn').forEach(b=>b.onclick=()=>{ setupDraft=box.value; gender=b.dataset.g; store.set('gender',gender); tone([600,800],.06); home(); });
     app.querySelectorAll('.age').forEach(b=>b.onclick=()=>{
-      const typed=($('#kidname').value||'').trim(); if(typed){ names[lang]=typed; store.set('names',names); }   // the name stays on this device only
+      const typed=(box.value||'').trim();
+      if(!typed){ ask(u().needName, box); box.focus(); return; }          // a name is required
+      if(!gender){ ask(u().needGender, $('.genders')); return; }           // and boy or girl
+      names[lang]=typed; store.set('names',names); setupDraft=null;         // the name stays on this device only
       savedAge=+b.dataset.age; store.set('age',savedAge); track('Age Level Set',{age_level:savedAge, source:'first_launch'}); syncUser(); tone([520,780],.08); home(); });
     return;
   }
@@ -1539,6 +1564,7 @@ function parents(msg=''){
     <div class="pform">
       <label for="nmEn">${u().nameEn}</label><input id="nmEn" value="${esc(names.en||'')}" maxlength="14" autocomplete="off">
       <label for="nmHe">${u().nameHe}</label><input id="nmHe" value="${esc(names.he||'')}" maxlength="14" autocomplete="off" dir="rtl">
+      <span class="lbl">${u().kid}</span><div class="chips" id="kidg">${['boy','girl'].map(g=>`<button class="chip ${gender===g?'on':''}" data-g="${g}">${g==='boy'?'👦':'👧'} ${u()[g]}</button>`).join('')}</div>
       <span class="lbl">${u().level}</span><div class="chips">${[4,5,6,7].map(a=>`<button class="chip ${a===A?'on':''}" data-a="${a}">${t().age} ${a}</button>`).join('')}</div>
     </div>
     <h3>📊 ${u().dataH}</h3>
@@ -1563,8 +1589,12 @@ function parents(msg=''){
     <p class="note">${u().device}</p>
   </div>`;
   bindTop(home);
-  $('#nmEn').oninput=e=>{ names.en=e.target.value.trim(); store.set('names',names); };
-  $('#nmHe').oninput=e=>{ names.he=e.target.value.trim(); store.set('names',names); };
+  // names: one of the two must always be filled in; emptying both brings the last name back
+  const saved = {...names};
+  [['#nmEn','en'],['#nmHe','he']].forEach(([id,l])=>{ const el=$(id);
+    el.oninput=()=>{ names[l]=el.value.trim(); if(hasName()){ store.set('names',names); Object.assign(saved,names); } };
+    el.onblur=()=>{ if(!hasName()){ Object.assign(names,saved); el.value=names[l]||''; parents(u().needName); } }; });
+  app.querySelectorAll('#kidg .chip').forEach(b=>b.onclick=()=>{ gender=b.dataset.g; store.set('gender',gender); parents(); });
   app.querySelectorAll('.pform .chip[data-a]').forEach(b=>b.onclick=()=>{ savedAge=+b.dataset.a; store.set('age',savedAge); track('Age Level Set',{age_level:savedAge, source:'parents_corner'}); syncUser(); parents(); });
   const vs=$('#vsel'); if(vs) vs.onchange=()=>{ voicePref[lang]=vs.value; store.set('vpref',voicePref); loadVoices(); speak(u().sample()); };
   app.querySelectorAll('#vspd .chip').forEach(b=>b.onclick=()=>{ voiceSpeed=+b.dataset.v; store.set('vspeed',voiceSpeed); track('Voice Speed Changed',{speed:voiceSpeed}); parents(); speak(u().sample()); });

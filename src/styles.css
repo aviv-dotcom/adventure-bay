@@ -695,3 +695,21 @@ body.quiz .wrap{padding-bottom:12px}
 .line .larrow{display:inline-flex;color:var(--coral,#e8604c);margin-inline:2px 8px}
 .line .larrow .ico{width:.8em;height:.8em;stroke-width:3.2}
 :root[dir="rtl"] .line .larrow .ico{transform:scaleX(-1)}
+/* setup: boy or girl, and a gentle nudge when something is missing */
+.genders{display:grid;grid-template-columns:repeat(2,minmax(0,200px));gap:16px;justify-content:center}
+.gbtn{border:none;background:var(--card);border-radius:26px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:4px;box-shadow:0 6px 0 var(--shadow);border-bottom:6px solid var(--sand-dark)}
+.gbtn .em{font-size:2.8rem;line-height:1}
+.gbtn .t{font-family:var(--f-display);font-weight:700;font-size:1.5rem}
+.gbtn.on{outline:5px solid var(--sun);border-bottom-color:var(--sun);transform:translateY(2px)}
+.gbtn:active{transform:translateY(4px)}
+.age.on{outline:5px solid var(--sun)}
+.need{min-height:1.4em;margin:0;text-align:center;font-weight:800;color:var(--coral)}
+.miss{animation:shake .4s ease-in-out}
+.namebox input.miss{border-color:var(--coral)}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+/* setup screen is taller now (name, boy/girl, age): keep it compact so it fits a tablet without shrinking much */
+#app:has(#kidname) .hero .guide{display:none}
+#app:has(#kidname){gap:12px}
+#app:has(#kidname) .age{padding:12px 10px}
+#app:has(#kidname) .age .em{font-size:2.3rem}
+#app:has(#kidname) .gbtn{padding:10px}

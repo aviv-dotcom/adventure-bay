@@ -2,8 +2,10 @@
 // The screen keeps showing plain text; the speaker reads the vocalized form, so it pronounces words correctly.
 // Words are vocalized in their sentence context by Dicta's Nakdan (https://nakdan.dicta.org.il), then the most common
 // reading of each word is kept. Hand fixes go in FIX below and always win.
-// Run after changing Hebrew text in src/game.js: npm run nikud
+// Also covers the girl versions of the texts (src/gender.js).
+// Run after changing Hebrew text in src/game.js or src/gender.js: npm run nikud
 import { readFileSync, writeFileSync } from 'node:fs';
+import { runInNewContext } from 'node:vm';
 
 // Hand fixes (always win, also inside phrases). Mostly commands to the child, which the vocalizer tends to read
 // as nouns or past tense, and "you" forms, which should be masculine (the game talks to a boy).
@@ -15,18 +17,27 @@ const FIX = {
   'אוצר':'אוֹצָר', 'שווה':'שָׁוֶה', 'אם':'אִם', 'לך':'לְךָ', 'המספר':'הַמִּסְפָּר', 'וואו':'וָאוּ', 'תוכי':'תֻּכִּי', 'שיתוף':'שִׁתּוּף',
   'איפוס':'אִפּוּס', 'נועה':'נוֹעָה', 'פינת':'פִּנַּת', 'בוקר':'בֹּקֶר', 'טוב':'טוֹב', 'לב':'לֵב', 'עכשיו':'עַכְשָׁיו', 'שלי':'שֶׁלִּי',
   'הממ':'הממ', 'אולי':'אוֹלִי',   // אולי is the owl guide's name (Ollie), not "maybe"
+  // girl forms (src/gender.js)
+  'ספרי':'סִפְרִי', 'עזרי':'עִזְרִי', 'מייני':'מַיְּנִי', 'אייתי':'אַיְּתִי', 'כסי':'כַּסִּי', 'תקני':'תַּקְּנִי', 'ותקני':'וְתַקְּנִי',
+  'מלחית':'מַלָּחִית', 'מדענית':'מַדְעָנִית', 'הלכה':'הָלְכָה', 'שמחה':'שָׂמְחָה',
 };
 // Hand fixes for whole phrases, where the right reading depends on the sentence (the child's name is cut out of it).
 const PHRASE_FIX = {
   'מצא את אוצר מפרץ ההרפתקאות!':'מָצָא אֶת אוֹצַר מִפְרַץ הַהַרְפַּתְקָאוֹת!',
   'קח את הזמן. אין לחץ.':'קַח אֶת הַזְּמַן. אֵין לַחַץ.',
+  'אין לחץ':'אֵין לַחַץ',   // "no pressure", not the command "press"
 };
 
 const src = readFileSync(new URL('../src/game.js', import.meta.url), 'utf8');
 const HEB = /[א-ת]/, MARK = /[֑-ׇ]/;
 // Hebrew stretches of text inside the code (letters, vowel marks, spaces and sentence punctuation)
-const frags = [...new Set((src.match(/[א-ת֑-ׇ][א-ת֑-ׇ ,.?!:;\-־…׳״]*/g) || [])
+const boyFrags = [...new Set((src.match(/[א-ת֑-ׇ][א-ת֑-ׇ ,.?!:;\-־…׳״]*/g) || [])
   .map(s => s.trim()).filter(s => HEB.test(s)))];
+// The same texts as said to a girl (src/gender.js), so her words (געי, מצליחה…) get vowel marks too
+const sandbox = { window: {} };
+runInNewContext(readFileSync(new URL('../src/gender.js', import.meta.url), 'utf8'), sandbox);
+const girlFrags = boyFrags.map(f => sandbox.window.BayGender.girl(f, 'he', '')).filter(f => !boyFrags.includes(f));
+const frags = [...new Set([...boyFrags, ...girlFrags])];
 
 const isWord = w => w.length > 1 && !MARK.test(w) && !/[׳״'"]/.test(w);
 const skel = w => w.replace(/[֑-ׇ]/g, '').replace(/[וי]/g, '');   // the vocalized spelling may drop a vav/yod (תוכי → תֻּכִּי)
