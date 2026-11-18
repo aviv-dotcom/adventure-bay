@@ -690,7 +690,8 @@ function mountMatch(el, items){
 const tx = (en,hb) => he() ? hb : en;
 const S_EATS = [['🐰','🥕','rabbit','הארנב',0],['🐒','🍌','monkey','הקוף',0],['🐼','🎋','panda','הפנדה',1],['🐿️','🌰','squirrel','הסנאי',0],['🐶','🦴','dog','הכלב',0],
   ['🐱','🐟','cat','החתול',0],['🐝','🌸','bee','הדבורה',1],['🐦','🐛','bird','הציפור',1],['🐄','🌾','cow','הפרה',1],['🐭','🧀','mouse','העכבר',0]];
-const S_GIVES = [['🐄','🥛','cow','הפרה'],['🐔','🥚','chicken','התרנגולת'],['🐝','🍯','bee','הדבורה'],['🐑','🧶','sheep','הכבשה']];
+const S_GIVES = [['🐄','🥛','cow','הפרה'],['🐔','🥚','chicken','התרנגולת'],['🐝','🍯','bee','הדבורה'],['🐑','🧶','sheep','הכבשה'],
+  ['🐐','🧀','goat','העז'],['🌾','🍞','wheat','החיטה'],['🌳','🍎','apple tree','עץ התפוח'],['🐛','🧵','silkworm','תולעת המשי']];
 const S_SENSES = [{e:'🌸',en:'smell the flower',he:'להריח את הפרח',a:'👃'},{e:'🎵',en:'hear the music',he:'לשמוע את המוזיקה',a:'👂'},{e:'🌈',en:'see the rainbow',he:'לראות את הקשת',a:'👁️'},
   {e:'🍦',en:'taste the ice cream',he:'לטעום את הגלידה',a:'👅'},{e:'🧸',en:'feel the soft teddy',he:'להרגיש את הדובי הרך',a:'✋'},{e:'🔔',en:'hear the bell',he:'לשמוע את הפעמון',a:'👂'},
   {e:'🍕',en:'smell the pizza',he:'להריח את הפיצה',a:'👃'},{e:'🍋',en:'taste the sour lemon',he:'לטעום את הלימון החמוץ',a:'👅'},{e:'⭐',en:'see the stars',he:'לראות את הכוכבים',a:'👁️'},{e:'🧊',en:'feel the cold ice',he:'להרגיש את הקרח הקר',a:'✋'}];
@@ -1417,7 +1418,7 @@ const T2 = {
   en:{ hello:n=>`Hi ${n}! Ready for an adventure?`, dataH:'Usage data', dataShare:'Share anonymous usage data', off:'Off', on:'On',
        dataNote:"When on, the game sends anonymous events (like “station completed” or “question answered”) to help improve it. It never sends names, typed text or IP addresses. On by default; you can turn it off here at any time.",
        dataOff:'Usage data is not set up in this copy of the game, so nothing is sent.', practice:g=>`Practice with ${g}`, practiceOffer:'I made a special practice round with the tricky ones. Tap the Practice button!', practiceDone:n=>`Great practice, ${n}! The tricky ones are getting easier.`, lvUp:"You're getting really good at this! Next time it'll be a bit more challenging 🚀", skillsH:'Skills (the game adjusts these automatically)', lvHarder:'Harder', lvEasier:'Easier', lvOn:'On level', locked:'Finish every stop to open the treasure!', openIt:'Tap to open the treasure!', guideHi:(n,g)=>`Hi ${n}! I'm ${g.name.en} ${g.kind.en}, your guide here. Tap the first stop and let's go!`, welcome:(n,s)=>`Welcome back, ${n}! You have ${s} stars.`, welcome0:n=>`Welcome back, ${n}! Let's keep going.`, cont:'Continue the adventure', start:'Start the adventure',
-       allDone:'You finished every world! 🎉', trophies:'My trophies', trophyTitle:n=>`${n}'s trophies`, howOld:'How old is our hero?', setupHi:"Welcome! Let's get ready for the adventure.", whatName:"What is your child's name?", namePh:'Name', boyGirl:'Boy or girl?', boy:'Boy', girl:'Girl', needName:'Type the name first', needGender:'Choose boy or girl', kid:'Child', years:a=>`${a} years old`,
+       allDone:'You finished every world! 🎉', trophies:'My trophies', trophyTitle:n=>`${n}'s trophies`, howOld:'How old is our hero?', setupHi:"Welcome! Let's get ready for the adventure.", whatName:"What is your child's name?", namePh:'Name', boyGirl:'Boy or girl?', boy:'Boy', girl:'Girl', needName:'Type the name first', needGender:'Choose boy or girl', kid:'Child', next:'Next', obHi:"Hi! I'm Coco the parrot. Let's get ready for the adventure!", obGender:n=>`Is ${n} a boy or a girl?`, obAge:n=>`How old is ${n}?`, obLater:"You can change all of this later in the Parents' Corner.", obReady:n=>`Let's go, ${n}! 🎉`, years:a=>`${a} years old`,
        gateQ:(a,b)=>`For grown-ups: what is ${a} × ${b}?`, parents:"Parents' Corner", settings:'Settings', nameEn:'Name in English', nameHe:'Name in Hebrew',
        level:'Level (age)', progress:'Progress', progressNote:(a)=>`English trail, age ${a}. Each language keeps its own progress.`, firstTry:'The % shows how often he answered right on the first try.',
        needs:'Needs practice', none:'Not played yet', allGood:'No weak spots yet. Keep playing!', reset:'Reset this progress',
@@ -1429,7 +1430,7 @@ const T2 = {
   he:{ hello:n=>`שלום ${n}! מוכן להרפתקה?`, dataH:'נתוני שימוש', dataShare:'שיתוף נתוני שימוש אנונימיים', off:'כבוי', on:'פעיל',
        dataNote:'כשהאפשרות פעילה, המשחק שולח אירועים אנונימיים (כמו "סיום תחנה" או "מענה על שאלה") כדי לשפר אותו. הוא לעולם לא שולח שמות, טקסט שהוקלד או כתובות IP. פעיל כברירת מחדל; אפשר לכבות כאן בכל רגע.',
        dataOff:'נתוני שימוש לא הוגדרו בעותק הזה של המשחק, ולכן שום דבר לא נשלח.', practice:g=>`תרגול עם ${g}`, practiceOffer:'הכנתי לך סבב תרגול מיוחד עם מה שקשה. גע בכפתור התרגול!', practiceDone:n=>`תרגול מצוין, ${n}! הדברים הקשים נהיים קלים יותר.`, lvUp:'אתה ממש משתפר בזה! בפעם הבאה זה יהיה קצת יותר מאתגר 🚀', skillsH:'מיומנויות (המשחק מתאים אותן אוטומטית)', lvHarder:'מאתגר יותר', lvEasier:'קל יותר', lvOn:'ברמה', locked:'סיים את כל התחנות כדי לפתוח את האוצר!', openIt:'גע כדי לפתוח את האוצר!', guideHi:(n,g)=>{ const f=(g===GUIDES.science||g===GUIDES.feelings); return `שלום ${n}! אני ${g.name.he} ${g.kind.he}, ${f?'המדריכה':'המדריך'} שלך כאן. גע בתחנה הראשונה ויוצאים לדרך!`; }, welcome:(n,s)=>`ברוך שובך, ${n}! יש לך ${s} כוכבים.`, welcome0:n=>`ברוך שובך, ${n}! ממשיכים הלאה.`, cont:'ממשיכים בהרפתקה', start:'מתחילים בהרפתקה',
-       allDone:'סיימת את כל העולמות! 🎉', trophies:'הגביעים שלי', trophyTitle:n=>`הגביעים של ${n}`, howOld:'בן כמה הגיבור שלנו?', setupHi:'ברוכים הבאים! בואו נתכונן להרפתקה.', whatName:'מה שם הילד או הילדה?', namePh:'שם', boyGirl:'בן או בת?', boy:'בן', girl:'בת', needName:'כתבו קודם את השם', needGender:'בחרו בן או בת', kid:'הילד או הילדה', years:a=>`${isGirl()?'בת':'בן'} ${a}`,
+       allDone:'סיימת את כל העולמות! 🎉', trophies:'הגביעים שלי', trophyTitle:n=>`הגביעים של ${n}`, howOld:'בן כמה הגיבור שלנו?', setupHi:'ברוכים הבאים! בואו נתכונן להרפתקה.', whatName:'מה שם הילד או הילדה?', namePh:'שם', boyGirl:'בן או בת?', boy:'בן', girl:'בת', needName:'כתבו קודם את השם', needGender:'בחרו בן או בת', kid:'הילד או הילדה', next:'הבא', obHi:'שלום! אני קוקו התוכי. בואו נתכונן להרפתקה!', obGender:n=>`${n} בן או בת?`, obAge:n=>`${isGirl()?'בת':'בן'} כמה ${n}?`, obLater:'אפשר לשנות הכול אחר כך בפינת ההורים.', obReady:n=>`יוצאים לדרך, ${n}! 🎉`, years:a=>`${isGirl()?'בת':'בן'} ${a}`,
        gateQ:(a,b)=>`למבוגרים: כמה זה ${a} × ${b}?`, parents:'פינת ההורים', settings:'הגדרות', nameEn:'השם באנגלית', nameHe:'השם בעברית',
        level:'רמה (גיל)', progress:'התקדמות', progressNote:(a)=>`המסלול בעברית, גיל ${a}. לכל שפה יש התקדמות משלה.`, firstTry:'האחוז מראה כמה פעמים ענה נכון כבר בניסיון הראשון.',
        needs:'כדאי לתרגל', none:'עוד לא שוחק', allGood:'אין עדיין נקודות חלשות. ממשיכים לשחק!', reset:'איפוס ההתקדמות הזאת',
@@ -1478,32 +1479,60 @@ function bindTop(backFn){
   }catch(e){} };
 }
 
-let setupDraft = null;   // the name being typed on the setup screen, kept while boy/girl is picked
+/* ---------- onboarding: three short steps with Coco (name → boy or girl → age); all can be changed later in the Parents' Corner ---------- */
+let setupDraft = null, obStep = null;   // the name being typed, and the step on screen
+const ICON_NEXT = svgI('<path d="M9 5l7 7-7 7"/>');
+function onboard(step){
+  setWorldBg('home'); hideBuddy();
+  step = step || obStep || (!hasName() ? 1 : !gender ? 2 : 3); obStep = step;
+  current = () => onboard(obStep);
+  const typed = setupDraft ?? (names[lang] || names[lang==='he'?'en':'he'] || '');
+  const kid = esc(typed.trim() || nm());
+  const say = step===1 ? u().obHi : step===2 ? u().obGender(kid) : u().obAge(kid);
+  const dots = [1,2,3].map(i=>`<span class="obdot ${i===step?'on':i<step?'done':''}"></span>`).join('');
+  const body =
+    step===1 ? `<label class="obq" for="kidname">${u().whatName}</label>
+                <input id="kidname" class="obname" maxlength="14" autocomplete="off" autocapitalize="words" enterkeyhint="next" placeholder="${u().namePh}" value="${esc(typed)}">
+                <button class="btn gobtn" id="obnext">${u().next} ${ICON_NEXT}</button>`
+  : step===2 ? `<div class="genders">${[['boy','👦'],['girl','👧']].map(([g,e])=>`<button class="gbtn ${gender===g?'on':''}" data-g="${g}" aria-pressed="${gender===g}"><span class="em">${e}</span><span class="t">${u()[g]}</span></button>`).join('')}</div>`
+  :            `<div class="ages ob">${[4,5,6,7].map(a=>`<button class="age ${LV()[a].cls} ${savedAge===a?'on':''}" data-age="${a}"><span class="em">${['🐣','⛵','🧭','🎖️'][a-4]}</span><span class="t">${u().years(a)}</span><span class="s">${LV()[a].sub[lang]}</span></button>`).join('')}</div>`;
+  app.innerHTML = topbar(false) + `
+  <div class="onboard pop">
+    <div class="obtop">${step>1?`<button class="obback" id="obback" aria-label="${u().back}">${ICON.back}</button>`:'<span></span>'}<div class="obdots" role="img" aria-label="${step} / 3">${dots}</div><span></span></div>
+    <div class="obguide"><span class="g" aria-hidden="true">${GUIDE}</span><div class="obsay">${step===1?`<b>${t().title}</b>`:''}<span>${say}</span></div></div>
+    ${body}
+    <p class="need" id="need" role="alert"></p>
+    <p class="obnote">🔒 ${u().obLater}</p>
+  </div>`;
+  bindTop(); bindPC();
+  speak(step===1 ? `${say} ${u().whatName}` : say);
+  const need = $('#need');
+  const ask = (msg, el) => { need.textContent=msg; el.classList.remove('miss'); void el.offsetWidth; el.classList.add('miss'); tone([300,240],.12); speak(msg); };
+  if($('#obback')) $('#obback').onclick = () => { tone([500,400],.05); onboard(step-1); };
+  if(step===1){
+    const box=$('#kidname');
+    const next = () => { const v=box.value.trim();
+      if(!v){ ask(u().needName, box); box.focus(); return; }                // a name is required
+      names[lang]=v; store.set('names',names); setupDraft=null;              // the name stays on this device only
+      tone([600,800],.06); onboard(2); };
+    box.oninput = () => { setupDraft=box.value; box.classList.remove('miss'); need.textContent=''; };
+    box.onkeydown = e => { if(e.key==='Enter'){ e.preventDefault(); next(); } };
+    $('#obnext').onclick = next;
+  } else if(step===2){
+    app.querySelectorAll('.gbtn').forEach(b=>b.onclick=()=>{
+      gender=b.dataset.g; store.set('gender',gender);
+      app.querySelectorAll('.gbtn').forEach(x=>x.classList.toggle('on', x===b)); tone([600,800],.06);
+      setTimeout(()=>onboard(3), 280); });
+  } else {
+    app.querySelectorAll('.age').forEach(b=>b.onclick=()=>{
+      savedAge=+b.dataset.age; store.set('age',savedAge); obStep=null;
+      track('Age Level Set',{age_level:savedAge, source:'first_launch'}); syncUser();
+      sfx.win(); home(); toast(u().obReady(nm())); });
+  }
+}
 function home(){
   age=null; current=home; setWorldBg('home');
-  if(!savedAge || !hasName() || !gender){   // first time: the hero's name, boy or girl, and age (all can be changed later in the Parents' Corner)
-    const typed0 = setupDraft ?? (names[lang] || names[lang==='he'?'en':'he'] || '');
-    app.innerHTML = topbar(false) + `
-    <div class="hero pop"><div class="guide">${GUIDE}</div><h1>${t().title}</h1><p>${u().setupHi}</p></div>
-    <div class="namebox setup"><label for="kidname">${u().whatName}</label><input id="kidname" maxlength="14" autocomplete="off" autocapitalize="words" placeholder="${u().namePh}" value="${esc(typed0)}" required></div>
-    <p class="setupq">${u().boyGirl}</p>
-    <div class="genders">${[['boy','👦'],['girl','👧']].map(([g,e])=>`<button class="gbtn ${gender===g?'on':''}" data-g="${g}" aria-pressed="${gender===g}"><span class="em">${e}</span><span class="t">${u()[g]}</span></button>`).join('')}</div>
-    <p class="setupq">${u().howOld}</p>
-    <div class="ages">${[4,5,6,7].map(a=>`<button class="age ${LV()[a].cls} ${savedAge===a?'on':''}" data-age="${a}"><span class="em">${['🐣','⛵','🧭','🎖️'][a-4]}</span><span class="t">${u().years(a)}</span></button>`).join('')}</div>
-    <p class="need" id="need" role="alert"></p>`;
-    bindTop(); bindPC();
-    const box=$('#kidname'), need=$('#need');
-    box.oninput=()=>{ setupDraft=box.value; box.classList.remove('miss'); need.textContent=''; };
-    const ask=(msg, el)=>{ need.textContent=msg; el.classList.remove('miss'); void el.offsetWidth; el.classList.add('miss'); tone([300,240],.12); speak(msg); };
-    app.querySelectorAll('.gbtn').forEach(b=>b.onclick=()=>{ setupDraft=box.value; gender=b.dataset.g; store.set('gender',gender); tone([600,800],.06); home(); });
-    app.querySelectorAll('.age').forEach(b=>b.onclick=()=>{
-      const typed=(box.value||'').trim();
-      if(!typed){ ask(u().needName, box); box.focus(); return; }          // a name is required
-      if(!gender){ ask(u().needGender, $('.genders')); return; }           // and boy or girl
-      names[lang]=typed; store.set('names',names); setupDraft=null;         // the name stays on this device only
-      savedAge=+b.dataset.age; store.set('age',savedAge); track('Age Level Set',{age_level:savedAge, source:'first_launch'}); syncUser(); tone([520,780],.08); home(); });
-    return;
-  }
+  if(!savedAge || !hasName() || !gender){ onboard(); return; }   // first time: the three setup steps
   const stars=totalStars(), nx=nextStation();
   const played = stars>0 || WORLD_ORDER.some(w=>[4,5,6,7].some(a=>progOf(w,a).done.length>0));
   const nxLabel = nx ? (()=>{ const s=stationsOf(nx.w,savedAge)[nx.i]; return `${WICON[nx.w]} ${t()[nx.w]} · ${s.icon} ${s.name[lang]}`; })() : '';
@@ -1643,15 +1672,23 @@ function startStation(i){
   stIdx=i; qIdx=0; stationStars=0;
   const s=ST()[i], L=LV()[age];
   const make = tp => makeQ(tp, s.items ? pick(s.items) : null);
+  // replaying a finished stop: new order, and one question of a different kind from this world and age, so it feels new
+  let plan = [...L.plan[i]];
+  const replay = !!(PR()[age] && PR()[age].done.includes(i));
+  if(replay){
+    plan = shuffle(plan);
+    const others = [...new Set(L.plan.flat())].filter(tp=>!plan.includes(tp));
+    if(others.length) plan[rnd(0,plan.length-1)] = pick(others);
+  }
   qs = [];
-  for(const tp of L.plan[i]){   // avoid the same question twice in one station
+  for(const tp of plan){   // avoid the same question twice in one station
     qs.push(pickFresh(()=>make(tp), qs));
   }
   const weak = weakSkills(world, age).filter(w=>!qs.some(q=>q.skill===w.sk));   // a weak skill comes back for review
   if(weak.length && qs.length>1 && Math.random()<.6){ const w=pick(weak); const slot=rnd(1,qs.length-1); qs[slot] = pickFresh(()=>make(w.tok), qs.filter((_,i)=>i!==slot)); }
   rememberQs(qs);
   stStart=Date.now();
-  track('Station Started',{world, station_index:i, station_name:s.name.en, review_question:qs.some(q=>!L.plan[i].includes(q.tok))});
+  track('Station Started',{world, station_index:i, station_name:s.name.en, review_question:qs.some(q=>!L.plan[i].includes(q.tok)), replay});
   showQ(true);
 }
 function startPractice(){   // a bonus round made of this world's weakest skills

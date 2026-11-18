@@ -30,7 +30,7 @@ Before going public, add a short privacy notice for parents and check it against
 | `Age Level Set` | Age chosen on first launch or changed by a parent | `age_level`, `source` (`first_launch` \| `parents_corner`) |
 | `Language Changed` | Language switch tapped | `to` (`en` \| `he`) |
 | `World Opened` | A world's map is opened from home or "Continue" | `world`, `stations_done`, `stations_total`, `practice_offered` (bool) |
-| `Station Started` | A station begins | `world`, `station_index`, `station_name` (English), `review_question` (bool: a weak skill was mixed in) |
+| `Station Started` | A station begins | `world`, `station_index`, `station_name` (English), `review_question` (bool: a weak skill or a different kind of question was mixed in), `replay` (bool: the stop was already finished) |
 | `Question Answered` | A question is solved (fires once per question, on the correct answer) | `world`, `station_index` (-1 = practice), `is_practice`, `question_index`, `skill`, `question_type`, `difficulty_level` (-1 easier · 0 on level · 1 harder), `first_try` (bool), `attempts`, `time_to_answer_ms`, `hint_shown` (bool), `interaction` (`choice` \| `task`) |
 | `Hint Shown` | The guide gives a hint | `world`, `reason` (`second_wrong_try` \| `idle`), `skill` |
 | `Skill Level Changed` | A skill moves between easier / on level / harder | `world`, `skill`, `from_level`, `to_level` |
