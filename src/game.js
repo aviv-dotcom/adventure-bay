@@ -1723,7 +1723,7 @@ function showQ(fresh){
   <div class="qcard pop ${q.wide?'wide':''} ${world==='letters'&&he()?'nq':''}">
     <div class="story"><span class="g">${G().e}</span><div class="bubble"><b>${s.icon} ${s.name[lang]}</b> · ${cheer}</div></div>
     <div class="dots">${qs.map((_,i)=>`<span class="${i<qIdx?'on':i===qIdx?'cur':''}"></span>`).join('')}</div>
-    <h2 class="qtext"><span>${esc(q.t())}</span><button class="say" id="say" aria-label="Read it again">${ICON.soundOn}</button></h2>
+    <h2 class="qtext"><span>${esc(q.t())}</span><button class="say" id="say" aria-label="Read it again">${ICON.soundOn}<span>${he()?'הקשב':'Listen'}</span></button></h2>
     ${q.visual?`<div class="visual">${q.visual}</div>`:''}
     ${q.mount ? `<div class="task" id="task"></div>` : `<div class="answers">${q.opts.map((o,i)=>`<button class="ans ${q.small?'small':''}" data-i="${i}">${o.label}</button>`).join('')}</div>`}
     <div class="feedback" id="fb" aria-live="polite"></div>

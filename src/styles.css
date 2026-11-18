@@ -745,3 +745,18 @@ body.quiz .wrap{padding-bottom:12px}
 }
 #app:has(> .onboard){min-height:calc(100dvh - 40px);box-sizing:border-box;padding-bottom:0}
 .onboard{margin-block:auto}
+/* CLEARLY TAPPABLE: the speaker is a yellow 3D button with a word, the guides wear a round button frame and a 💬 badge */
+/* the "listen again" button: clearly a button, but quiet (no movement, soft colors) so it doesn't pull attention from the question */
+.qtext .say{width:auto;height:50px;border-radius:999px;padding:0 16px 0 12px;display:inline-flex;align-items:center;gap:6px;
+  background:var(--card);color:var(--ink-soft);border:2px solid var(--sand-dark);font-family:inherit;font-weight:700;font-size:1rem;box-shadow:0 3px 0 var(--sand-dark)}
+.qtext .say .ico{width:24px;height:24px;stroke-width:2.4}
+.qtext .say:active{transform:translateY(3px);box-shadow:0 0 0 var(--sand-dark)}
+.qcard .story .g{position:relative;width:68px;height:68px;border-radius:50%;background:var(--sky);display:grid;place-items:center;font-size:2.5rem;
+  box-shadow:0 4px 0 var(--shadow),0 0 0 4px var(--sun)}
+.qcard .story .g:active{transform:translateY(3px)}
+.qcard .story .g::after,.buddy::after{content:'💬';position:absolute;top:-10px;inset-inline-end:-12px;width:30px;height:30px;border-radius:50%;
+  background:var(--card);display:grid;place-items:center;font-size:1rem;line-height:1;box-shadow:0 2px 6px rgba(0,0,0,.22);animation:badgeBob 2.2s ease-in-out infinite;pointer-events:none}
+.buddy{position:relative}
+@keyframes badgeBob{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-4px) scale(1.12)}}
+@media (max-width:600px){ .qtext .say{height:44px;font-size:.95rem;padding:0 12px 0 10px} .qcard .story .g{width:56px;height:56px;font-size:2rem} }
+@media (prefers-reduced-motion:reduce){ .qcard .story .g::after,.buddy::after{animation:none} }
