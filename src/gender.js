@@ -54,6 +54,13 @@
       'היית':'הָיִית', 'הפלת':'הִפַּלְתְּ'
     }
   };
+  // Dutch (after translation by src/nl.js): only the stories about the child and the word "held" change
+  const NL = {
+    phrases: [
+      ['Hij gaf', 'Zij gaf'], ['Hij vond', 'Zij vond'], ['heeft hij', 'heeft zij'], ['zijn fiets', 'haar fiets'],
+      ['Wat kan hij tegen zichzelf zeggen', 'Wat kan zij tegen zichzelf zeggen'], ['Hup, held', 'Hup, heldin'], ['onze held', 'onze heldin'], ['van de held', 'van de heldin']
+    ]
+  };
   const EN = {
     phrases: [
       ['He found', 'She found'], ['does he have', 'does she have'], ['There he saw', 'There she saw'], ['his bike', 'her bike'],
@@ -70,13 +77,14 @@
     const heRules = HE.phrases.map(([a, b]) => [new RegExp(`(?<![${L}])${esc(a).replace('\\{N\\}', N)}(?![${L}])`, 'g'), b.replace('{N}', name || '')]);
     const words = new RegExp(`(?<![${L}])(${Object.keys(HE.words).sort((a, b) => b.length - a.length).map(esc).join('|')})(?![${L}])`, 'g');
     const enRules = EN.phrases.map(([a, b]) => [new RegExp(`\\b${esc(a)}\\b`, 'g'), b]);
-    return cache[key] = { heRules, words, enRules };
+    const nlRules = NL.phrases.map(([a, b]) => [new RegExp(`\\b${esc(a)}\\b`, 'g'), b]);
+    return cache[key] = { heRules, words, enRules, nlRules };
   }
   // Rewrite text for a girl. lang: 'he' | 'en'. name: the child's name as shown. speech: also fix vowels for speaking.
   function girl(text, lang, name, speech){
     if(!text) return text;
     const c = compile(name);
-    if(lang !== 'he'){ let s = text; for(const [re, b] of c.enRules) s = s.replace(re, b); return s; }
+    if(lang !== 'he'){ let s = text; for(const [re, b] of (lang === 'nl' ? c.nlRules : c.enRules)) s = s.replace(re, b); return s; }
     let s = text;
     const held = [];
     HE.keep.forEach((k, i) => { if(s.includes(k)){ s = s.split(k).join(`\u0001${i}\u0001`); held.push(i); } });

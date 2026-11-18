@@ -30,22 +30,34 @@ if(!/iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent)){ try{ const l=docume
 
 /* ---------- language ---------- */
 let lang = store.get('lang','en');
-const names = store.get('names',{en:'',he:''});   // no built-in name: a parent types the child's name on first launch
+const names = store.get('names',{en:'',he:'',nl:''}); if(names.nl===undefined) names.nl='';   // no built-in name: a parent types the child's name on first launch
 /* the child's name in this language, else the name typed in the other language, else a friendly placeholder */
-const nm = () => names[lang] || names[lang==='he'?'en':'he'] || (lang==='he'?(isGirl()?'חוקרת':'חוקר'):'Explorer');
-const hasName = () => !!(names.en || names.he);
+const nm = () => names[lang] || names.en || names.he || names.nl || (lang==='he'?(isGirl()?'חוקרת':'חוקר'):'Explorer');
+const hasName = () => !!(names.en || names.he || names.nl);
 const he = () => lang==='he';
+const isNL = () => lang==='nl';   // Dutch: the game builds English text and src/nl.js turns it into Dutch (screen and speech)
+const LANGS = {en:'English', he:'עברית', nl:'Nederlands'};
+if(!LANGS[lang]) lang='en';
 /* boy or girl: the texts are written for a boy; for a girl, src/gender.js rewrites what is shown and spoken */
 let gender = store.get('gender', null);   // 'boy' | 'girl' | null (asked on first launch, changeable in the Parents' Corner)
 function isGirl(){ return gender==='girl'; }
 const forKid = (s, L=lang, speech=false) => (isGirl() && window.BayGender) ? window.BayGender.girl(String(s), L, nm(), speech) : s;
-function genderText(root){   // rewrite the text on screen for a girl (skips the Parents' Corner, which talks to grown-ups, and typing boxes)
-  if(!isGirl() || !window.BayGender || !root) return;
-  const walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => (!n.data.trim() || !n.parentElement || n.parentElement.closest('.pcard2, input, textarea, script, style')) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT });
-  for(let n=walk.nextNode(); n; n=walk.nextNode()){ const t=forKid(n.data); if(t!==n.data) n.data=t; }
+/* every new text on screen: in Dutch, translate it (src/nl.js); for a girl, rewrite it (src/gender.js).
+   Never translated: the words a child reads on Letters Island (already Dutch) and the language names. The girl wording skips the Parents' Corner. */
+const NOTR = '.notr, .bigword, .letter, .tile, .slot, .clapword, .bub.small, .langmenu, .langbtn, .mlet';
+function localize(root){
+  const nlOn = isNL() && window.BayNL, girl = isGirl() && window.BayGender;
+  if((!nlOn && !girl) || !root) return;
+  if(nlOn && root.nodeType===1) [root, ...root.querySelectorAll('[placeholder],[aria-label]')].forEach(el=>{ if(el.closest(NOTR)) return;
+    for(const a of ['placeholder','aria-label']){ const v=el.getAttribute(a); if(v){ const tv=window.BayNL.tr(v); if(tv!==v) el.setAttribute(a,tv); } } });
+  const walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => (!n.data.trim() || !n.parentElement || n.parentElement.closest('input, textarea, script, style')) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT });
+  for(let n=walk.nextNode(); n; n=walk.nextNode()){ const el=n.parentElement; let tv=n.data;
+    if(nlOn && !el.closest(NOTR)) tv=window.BayNL.tr(tv);
+    if(girl && !el.closest('.pcard2')) tv=forKid(tv);
+    if(tv!==n.data) n.data=tv; }
 }
-try{ new MutationObserver(ms=>{ if(!isGirl()) return;
-  for(const m of ms){ if(m.type==='characterData') genderText(m.target.parentElement); else m.addedNodes.forEach(n=>genderText(n.nodeType===3?n.parentElement:n)); } })
+try{ new MutationObserver(ms=>{ if(!isGirl() && !isNL()) return;
+  for(const m of ms){ if(m.type==='characterData') localize(m.target.parentElement); else m.addedNodes.forEach(n=>localize(n.nodeType===3?n.parentElement:n)); } })
   .observe(document.body, {childList:true, subtree:true, characterData:true}); }catch(e){}
 const T = {
   en:{ title:'Adventure Bay', invite:n=>`Coco the parrot invites <b id="hn">${n}</b> on an adventure!`,
@@ -69,10 +81,10 @@ const T = {
        treasure:n=>`הידד! ${n} מצא את אוצר מפרץ ההרפתקאות!`, collected:(s,a)=>`אספת ${s} כוכבים בגיל ${a}`,
        langBtn:'English', back:'➡️', check:'✓ סיימתי!', recount:['בוא נספור שוב!','הממ, נספור עוד פעם!'], basket:'סל' }
 };
-const t = () => T[lang];
+const t = () => T[lang] || T.en;   // Dutch uses the English texts, translated on the way out
 function applyLang(){
   document.documentElement.lang = lang; document.documentElement.dir = he()?'rtl':'ltr';
-  document.title = t().title;
+  document.title = isNL()&&window.BayNL ? window.BayNL.tr(t().title) : t().title;
 }
 
 /* ---------- sound + speech ---------- */
@@ -89,19 +101,21 @@ const sfx = { good:()=>tone([660,880,1100]), bad:()=>tone([300,240],.16), win:()
 /* ---------- voice: pick the best installed voice, keep Hebrew vowel marks, slow down short items ---------- */
 let voiceOn = store.get('voice', true);
 let voiceSpeed = store.get('vspeed', .8);             // 0.8 = slow (default), 1 = normal (Parents' Corner)
-let voicePref = store.get('vpref', {en:'', he:''});    // a voice the parent picked, by name
-let voices = {en:null, he:null}, voiceLists = {en:[], he:[]}, voicesLoaded = false;
+let voicePref = store.get('vpref', {en:'', he:'', nl:''});    // a voice the parent picked, by name
+let voices = {en:null, he:null, nl:null}, voiceLists = {en:[], he:[], nl:[]}, voicesLoaded = false;
 const scoreVoice = v => { const n=v.name; let s=0;
   if(/google us english/i.test(n)) s+=200;   // first choice for English when the device has it
+  if(/google nederlands/i.test(n)) s+=150;    // and for Dutch
   if(/natural|neural|online|premium|enhanced|wavenet|siri/i.test(n)) s+=50;   // the newer, human-sounding voices
   if(/google/i.test(n)) s+=30;
-  if(/carmit|hila|avri|asaf|samantha|aria|jenny|ava|allison|karen|serena|libby|sonia|zira|female/i.test(n)) s+=20;
+  if(/carmit|hila|avri|asaf|fenna|colette|ellen|claire|xander|samantha|aria|jenny|ava|allison|karen|serena|libby|sonia|zira|female/i.test(n)) s+=20;
   if(/compact|espeak|eloquence|novelty/i.test(n)) s-=40;
   return s; };
 function loadVoices(){ try{ const vs=speechSynthesis.getVoices(); if(vs.length) voicesLoaded=true;
   voiceLists.he = vs.filter(v=>/^(he|iw)/i.test(v.lang)).sort((a,b)=>scoreVoice(b)-scoreVoice(a));
   voiceLists.en = vs.filter(v=>/^en/i.test(v.lang)).sort((a,b)=>(scoreVoice(b)-scoreVoice(a)) || (/^en-(US|GB)/i.test(b.lang)-/^en-(US|GB)/i.test(a.lang)));
-  for(const l of ['en','he']) voices[l] = voiceLists[l].find(v=>v.name===voicePref[l]) || voiceLists[l][0] || null;
+  voiceLists.nl = vs.filter(v=>/^nl/i.test(v.lang)).sort((a,b)=>(scoreVoice(b)-scoreVoice(a)) || (/^nl-NL/i.test(b.lang)-/^nl-NL/i.test(a.lang)));   // Netherlands Dutch first
+  for(const l of ['en','he','nl']) voices[l] = voiceLists[l].find(v=>v.name===voicePref[l]) || voiceLists[l][0] || null;
 }catch(e){} }
 try{ loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }catch(e){}
 /* Hebrew nikud for the speaker only (src/nikud.js, built by scripts/nikud.mjs): the screen stays plain, speech gets vowel marks */
@@ -112,12 +126,14 @@ function addNikud(s){
   return s.replace(/[א-ת֑-ׇ]+/g, w => /[֑-ׇ]/.test(w) ? w : (NIKUD.words[w] || w));
 }
 function prepSpeech(text, L){
-  const H = L==='he';
+  const H = L==='he', N = L==='nl';
+  if(N && window.BayNL) text = window.BayNL.tr(String(text));
+  const W3 = (h,e,n) => H ? h : N ? n : e;
   let s = forKid(String(text), L, true).replace(/[️‍⃣]/g,'');   // girl wording (with her vowels), then drop emoji modifiers
   if(H) s = addNikud(s);
   s = s
-    .replace(/−/g, H?' פחות ':' minus ').replace(/\+/g, H?' ועוד ':' plus ').replace(/×/g, H?' כפול ':' times ').replace(/=/g, H?' שווה ':' equals ')
-    .replace(/(\d+):(30|00)/g, (m,h,mm)=> H ? `${h}${mm==='30'?' וחצי':''}` : `${h} ${mm==='30'?'thirty':"o'clock"}`)
+    .replace(/−/g, W3(' פחות ',' minus ',' min ')).replace(/\+/g, W3(' ועוד ',' plus ',' plus ')).replace(/×/g, W3(' כפול ',' times ',' keer ')).replace(/=/g, W3(' שווה ',' equals ',' is '))
+    .replace(/(\d+):(30|00)/g, (m,h,mm)=> H ? `${h}${mm==='30'?' וחצי':''}` : N ? (mm==='30' ? `half ${(+h)%12+1}` : `${h} uur`) : `${h} ${mm==='30'?'thirty':"o'clock"}`)
     .replace(/[^\p{L}\p{M}\p{N}\s,.?!'׳״-]/gu,' ');      // keep \p{M}: Hebrew vowel marks (niqqud) guide pronunciation
   if(H) s = s.replace(/(\p{L}\p{M}*)-(\d)/gu,'$1 $2');    // "מ-3" → "מ 3"
   return s.replace(/\s+/g,' ').trim();
@@ -134,7 +150,7 @@ function speak(text, L=lang){
       return; }
     const clean = prepSpeech(text, L); if(!clean) return;
     const parts = clean.split(/(?<=[.?!])\s+/).filter(Boolean);   // short utterances: avoids cut-offs in long sentences
-    parts.forEach(p=>{ const u=new SpeechSynthesisUtterance(p); u.lang = L==='he'?'he-IL':'en-US'; if(voices[L]) u.voice=voices[L];
+    parts.forEach(p=>{ const u=new SpeechSynthesisUtterance(p); u.lang = L==='he'?'he-IL':L==='nl'?'nl-NL':'en-US'; if(voices[L]) u.voice=voices[L];
       const short = p.replace(/[^\p{L}]/gu,'').length <= 8;          // single letters, syllables, short words: say them slowly
       u.rate = (L==='he'?.9:.92) * voiceSpeed * (short?.75:1); u.pitch = 1.05; speechSynthesis.speak(u); });
   }catch(e){}
@@ -430,11 +446,14 @@ const strip = s => s.replace(/[֑-ׇ]/g,'');
 const EN_LET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 const HE_LET = 'אבגדהוזחטיכלמנסעפצקרשת'.split('');
 const LET = () => he() ? HE_LET : EN_LET;
+const LK = () => isNL() ? 'en' : lang;   // for texts kept only in English and Hebrew
 const EN_NAMES={A:'ay',B:'bee',C:'see',D:'dee',E:'ee',F:'ef',G:'jee',H:'aitch',I:'eye',J:'jay',K:'kay',L:'el',M:'em',N:'en',O:'oh',P:'pee',Q:'cue',R:'ar',S:'ess',T:'tee',U:'you',V:'vee',W:'double you',X:'ex',Y:'why',Z:'zee'};
 const HE_NAMES={'א':'אָלֶף','ב':'בֵּית','ג':'גִּימֶל','ד':'דָּלֶת','ה':'הֵא','ו':'וָו','ז':'זַיִן','ח':'חֵית','ט':'טֵית','י':'יוּד','כ':'כָּף','ל':'לָמֶד','מ':'מֵם','נ':'נוּן','ס':'סָמֶךְ','ע':'עַיִן','פ':'פֵּא','צ':'צָדִי','ק':'קוּף','ר':'רֵישׁ','ש':'שִׁין','ת':'תָּו',
   'ך':'כָּף סוֹפִית','ם':'מֵם סוֹפִית','ן':'נוּן סוֹפִית','ף':'פֵּא סוֹפִית','ץ':'צָדִי סוֹפִית'};
-const lname = L => he() ? (HE_NAMES[L]||L) : (EN_NAMES[L.toUpperCase()]||L);
-const ALIKE = {en:['CKQ','CS','GJ'], he:['אעה','כקח','תט','בו']};      // letters that sound the same
+const NL_NAMES={A:'aa',B:'bee',C:'cee',D:'dee',E:'ee',F:'ef',G:'gee',H:'haa',I:'ie',J:'jee',K:'kaa',L:'el',M:'em',N:'en',O:'oo',P:'pee',Q:'kuu',R:'er',S:'es',T:'tee',U:'uu',V:'vee',W:'wee',X:'iks',Y:'ypsilon',Z:'zet'};
+const lname = L => he() ? (HE_NAMES[L]||L) : isNL() ? '\u2060'+(NL_NAMES[L.toUpperCase()]||L) : (EN_NAMES[L.toUpperCase()]||L);   // \u2060: a letter name, not a word to translate
+const LB = () => isNL() ? 'nl' : 'en';   // which Latin-alphabet word lists to use
+const ALIKE = {en:['CKQ','CS','GJ'], nl:['CKQ','CS','FV','SZ','DT'], he:['אעה','כקח','תט','בו']};      // letters that sound the same
 const alike = (a,b) => { a=a.toUpperCase(); b=b.toUpperCase(); return a===b || ALIKE[lang].some(g=>g.includes(a)&&g.includes(b)); };
 const SIM_EN = {b:'dpq',d:'bpq',p:'qbd',q:'pgd',m:'nw',n:'mu',u:'nv',w:'mv',h:'nk',i:'jl',j:'ig',f:'tk',t:'fl',g:'qy',E:'FB',F:'EP',O:'QC',M:'NW',W:'MV',P:'RB',B:'PR'};
 const SIM_HE = {'ב':'כפ','כ':'בפ','פ':'כב','ד':'רה','ר':'דו','ו':'זי','ז':'וי','ח':'הת','ה':'חד','ת':'חה','ס':'טע','ט':'סמ','מ':'טס','ע':'צש','צ':'עש','ג':'נו','נ':'גכ','י':'וז','ל':'קכ','ק':'לה','ש':'עצ','א':'שע'};
@@ -445,7 +464,8 @@ function similar(L,n){   // look-alike letters first, then random ones
   return out;
 }
 const soundOthers = (L,n,pool) => shuffle(pool.filter(x=>!alike(x,L))).slice(0,n);
-const listSay = arr => arr.slice(0,-1).join(', ') + (he()?' או ':', or ') + arr[arr.length-1];
+const listSay = arr0 => { const arr = isNL()&&window.BayNL ? arr0.map(x=>window.BayNL.tr(x)) : arr0;   // Dutch: translate each answer before joining them
+  return arr.slice(0,-1).join(', ') + (he()?' או ':isNL()?' of ':', or ') + arr[arr.length-1]; };
 
 const WORDS = {
   en: [['apple','🍎',2],['ant','🐜',1],['ball','⚽',1],['bee','🐝',1],['bear','🐻',1],['banana','🍌',3],['bus','🚌',1],['bed','🛏️',1],['box','📦',1],['bat','🦇',1],['bug','🐛',1],['butterfly','🦋',3],
@@ -454,6 +474,15 @@ const WORDS = {
        ['key','🔑',1],['kite','🪁',1],['lion','🦁',2],['leaf','🍃',1],['log','🪵',1],['moon','🌙',1],['monkey','🐒',2],['mouse','🐭',1],['milk','🥛',1],['nose','👃',1],['octopus','🐙',3],
        ['pig','🐷',1],['pizza','🍕',2],['pen','🖊️',1],['rabbit','🐰',2],['rainbow','🌈',2],['robot','🤖',2],['sun','☀️',1],['snake','🐍',1],['star','⭐',1],['sock','🧦',1],['ship','🚢',1],
        ['tiger','🐯',2],['tree','🌳',1],['turtle','🐢',2],['train','🚆',1],['umbrella','☂️',3],['van','🚐',1],['violin','🎻',3],['whale','🐋',1],['web','🕸️',1],['zebra','🦓',2]],
+  /* Dutch: everyday words for young children, with the number of klankgrepen (syllables) for the drum */
+  nl: [['appel','🍎',2],['aap','🐒',1],['anker','⚓',2],['banaan','🍌',2],['bal','⚽',1],['beer','🐻',1],['bed','🛏️',1],['bij','🐝',1],['boom','🌳',1],['boot','⛵',1],['bus','🚌',1],['bos','🌲',1],
+       ['cactus','🌵',2],['citroen','🍋',2],['dolfijn','🐬',2],['doos','📦',1],['deur','🚪',1],['eend','🦆',1],['egel','🦔',2],['fiets','🚲',1],['giraf','🦒',2],['geit','🐐',1],
+       ['hond','🐶',1],['huis','🏠',1],['hoed','🎩',1],['hand','✋',1],['hart','❤️',1],['jas','🧥',1],['jurk','👗',1],['kat','🐱',1],['kip','🐔',1],['koe','🐄',1],['kaas','🧀',1],
+       ['krab','🦀',1],['kikker','🐸',2],['konijn','🐰',2],['klok','⏰',1],['leeuw','🦁',1],['lamp','💡',1],['maan','🌙',1],['muis','🐭',1],['melk','🥛',1],['neus','👃',1],
+       ['octopus','🐙',3],['olifant','🐘',3],['oog','👁️',1],['oor','👂',1],['peer','🍐',1],['paard','🐴',1],['pizza','🍕',2],['pen','🖊️',1],['plant','🪴',1],['raket','🚀',2],
+       ['rat','🐀',1],['regenboog','🌈',3],['robot','🤖',2],['roos','🌹',1],['ster','⭐',1],['slak','🐌',1],['sok','🧦',1],['schip','🚢',1],['slang','🐍',1],['schaap','🐑',1],
+       ['taart','🎂',1],['tas','👜',1],['tijger','🐯',2],['trein','🚆',1],['tent','⛺',1],['tomaat','🍅',2],['uil','🦉',1],['vis','🐟',1],['vos','🦊',1],['vlinder','🦋',2],
+       ['vuur','🔥',1],['walvis','🐋',2],['web','🕸️',1],['wolk','☁️',1],['zon','☀️',1],['zebra','🦓',2]],
   he: [['אַרְיֵה','🦁',2],['אֲוִירוֹן','✈️',3],['בַּיִת','🏠',2],['בָּנָנָה','🍌',3],['בַּלּוֹן','🎈',2],['גְּזֶר','🥕',2],['גְּלִידָה','🍦',3],['גַּמָּל','🐫',2],['גִּיטָרָה','🎸',3],
        ['דָּג','🐟',1],['דְּבוֹרָה','🐝',3],['הַר','⛰️',1],['וֶרֶד','🌹',2],['זְאֵב','🐺',2],['זֶבְּרָה','🦓',2],['חָתוּל','🐱',2],['חָלָב','🥛',2],['טַוָּס','🦚',2],
        ['יָד','✋',1],['יֶלֶד','👦',2],['יָם','🌊',1],['כֶּלֶב','🐶',2],['כּוֹכָב','⭐',2],['כַּדּוּר','⚽',2],['כַּפִּית','🥄',2],['לֵב','❤️',1],['לִימוֹן','🍋',2],
@@ -465,19 +494,27 @@ const W = () => WORDS[lang].map(([w,e,s])=>({w,e,s,f:(he()?strip(w):w)[0].toUppe
 const RHYMES = {
   en: [[['cat','🐱'],['hat','🎩'],['bat','🦇']],[['dog','🐶'],['log','🪵'],['frog','🐸']],[['bee','🐝'],['tree','🌳'],['key','🔑']],[['cake','🎂'],['snake','🐍']],
        [['mouse','🐭'],['house','🏠']],[['star','⭐'],['car','🚗']],[['moon','🌙'],['spoon','🥄']],[['goat','🐐'],['boat','⛵']],[['fox','🦊'],['box','📦'],['socks','🧦']],[['bear','🐻'],['pear','🍐'],['chair','🪑']]],
+  nl: [[['kat','🐱'],['rat','🐀'],['bad','🛁']],[['muis','🐭'],['huis','🏠']],[['beer','🐻'],['peer','🍐']],[['roos','🌹'],['doos','📦']],[['vos','🦊'],['bos','🌲']],
+       [['hoed','🎩'],['voet','🦶']],[['kip','🐔'],['schip','🚢']],[['taart','🎂'],['paard','🐴'],['kaart','🗺️']],[['vuur','🔥'],['muur','🧱']],[['jas','🧥'],['tas','👜']],
+       [['maan','🌙'],['banaan','🍌']],[['bij','🐝'],['ei','🥚']]],
   he: [[['לִימוֹן','🍋'],['בַּלּוֹן','🎈'],['שָׁעוֹן','⏰'],['אֲוִירוֹן','✈️']],[['פַּרְפַּר','🦋'],['עַכְבָּר','🐭']],[['מְכוֹנִית','🚗'],['כַּפִּית','🥄']],
        [['דֻּבִּי','🧸'],['צְבִי','🦌']],[['סִירָה','⛵'],['גִּיטָרָה','🎸'],['זֶבְּרָה','🦓']],[['יָרֵחַ','🌙'],['תַּפּוּחַ','🍎'],['מַפְתֵּחַ','🔑']]]
 };
 const BUILD = { en:{5:['cat','dog','sun','hat','bus','pig','fox','bed','cup','bat','box','hen','bug','web','log','van','pen'], 6:['fish','frog','duck','star','crab','drum','hand','milk','ship']},
-                he:{5:['דג','צב','לב','נר','הר','יד','ים','סוס','תות'], 6:['פיל','קוף','עץ','חתול','כלב','שמש','בית','ילד','גזר','נחש']} };
+                he:{5:['דג','צב','לב','נר','הר','יד','ים','סוס','תות'], 6:['פיל','קוף','עץ','חתול','כלב','שמש','בית','ילד','גזר','נחש']},
+                /* Dutch: mkm words first (kat, vis…), then longer words with two-letter sounds (aa, oo, ui, ee, ei/ij…) */
+                nl:{5:['kat','bal','zon','bus','pen','kip','sok','bed','jas','tas','vos','web','rat','bos'], 6:['boom','maan','muis','huis','vuur','boot','beer','roos','hoed','schip','trein','geit','ster','krab','hand','melk']} };
 const SWAP_EN = [['cat','hat','bat'],['dog','log'],['fox','box'],['hen','pen']];
+const SWAP = { en:SWAP_EN, nl:[['kat','rat'],['jas','tas'],['muis','huis'],['beer','peer'],['roos','doos'],['vos','bos']] };
 const FINALS_HE = [['קוֹ','ף','פ','🐒','קוֹף'],['עֵ','ץ','צ','🌳','עֵץ'],['בַּלּוֹ','ן','נ','🎈','בַּלּוֹן'],['יָ','ם','מ','🌊','יָם'],['מֶלֶ','ך','כ','👑','מֶלֶךְ'],['שָׁעוֹ','ן','נ','⏰','שָׁעוֹן'],['לִימוֹ','ן','נ','🍋','לִימוֹן']];
 const LAST_HE = ['דָּג','צָב','לֵב','נֵר','הַר','סוּס','פִּיל','תּוּת','חָתוּל','כֶּלֶב','גַּמָּל','חָלָב','נָחָשׁ','גְּזֶר','יָד','זְאֵב'];
 const SIGHT = { en:['the','and','is','I','a','see','you','my','we','go','to','it','in','up','can','me','look','like'],
+                nl:['de','het','een','is','en','ik','je','in','op','ja','nee','niet','wat','dit','dat','kan','ook','maar'],
                 he:['שֶׁל','אֶת','הוּא','הִיא','אֲנִי','יֵשׁ','זֶה','גַּם','לֹא','כֵּן','עַל','עִם','מָה','מִי'] };
 const SENT = { en:['I can see a {w}.','Look at the {w}!','The {w} is big.','I like the {w}.','Here is a {w}.'],
+               nl:['Ik zie een {w}.','Hier is een {w}.','Ik heb een {w}.','Kijk, een {w}!','Daar is een {w}!'],
                he:['אֲנִי רוֹאֶה {w}.','הִנֵּה {w}!','יֵשׁ לִי {w}.','אֲנִי אוֹהֵב {w}.'] };
-const READ_EN = () => [...BUILD.en[5], ...BUILD.en[6]];
+const READ_EN = () => [...BUILD[LB()][5], ...BUILD[LB()][6]];
 
 const STATIONS_L = [
   { icon:'🐚', name:{en:'Rhymes Beach',he:'חוף החרוזים'}, intro:{en:'The waves are singing rhymes! Listen closely.',he:'הגלים שרים חרוזים! הקשב טוב.'} },
@@ -549,7 +586,7 @@ function genL(type){
       q={wide:true, t:()=>H?'התאם כל אות לתמונה שמתחילה בה!':'Match each letter to the picture that starts with it!',
          sp:()=>(H?'התאם כל אות לתמונה שמתחילה בה! ':'Match each letter to the picture that starts with it! ')+listSay(ws.map(x=>x.w)),
          mount:el=>mountMatch(el, ws.map(x=>({L:x.f,label:lab(x),e:x.e,w:x.w})))}; break; }
-    case 'trace': { const sets={en:{4:'ABCDEFHILMOTUVY',5:'abcdehilmnorstu',6:'bdgjkpqfy'}, he:{4:'אבגדהלמנסר',5:'אבגדהוזחטיכלמנסעפצקרשת',6:'ךםןףץקשצע'}};
+    case 'trace': { const sets={en:{4:'ABCDEFHILMOTUVY',5:'abcdehilmnorstu',6:'bdgjkpqfy'}, nl:{4:'ABCDEFHILMOTUVY',5:'abcdehilmnorstu',6:'bdgjkpqfy'}, he:{4:'אבגדהלמנסר',5:'אבגדהוזחטיכלמנסעפצקרשת',6:'ךםןףץקשצע'}};
       const L=pick(sets[lang][age].split(''));
       q={wide:true, t:()=>H?`עקוב עם האצבע על האות ${L}!`:`Trace the letter ${L} with your finger!`, sp:()=>H?`עקוב עם האצבע על האות ${lname(L)}!`:`Trace the letter ${lname(L)} with your finger!`,
          mount:el=>mountTrace(el,L)}; break; }
@@ -561,7 +598,7 @@ function genL(type){
       if(H){ const w=pick(words.filter(x=>LAST_HE.includes(x.w))); const last=strip(w.w).slice(-1); const stem=w.w.replace(/[א-ת][֑-ׇ]*$/,'');
         q={t:()=>'איזו אות חסרה בסוף המילה?', sp:()=>`${w.w}. איזו אות חסרה בסוף המילה ${w.w}?`,
            visual:`${cr(w.e)}<span class="bigword" dir="rtl">${stem}<span class="blank">?</span></span>`, opts:letOpts(shuffle([last,...soundOthers(last,n-1,HE_LET)])), ans:last}; }
-      else { const p=pick(BUILD.en[5]); const w=words.find(x=>x.w===p); const last=p.slice(-1);
+      else { const p=pick(BUILD[LB()][5]); const w=words.find(x=>x.w===p); const last=p.slice(-1);
         const o=shuffle([last,...soundOthers(last,n-1,EN_LET).map(x=>x.toLowerCase())]);
         q={t:()=>'Which letter is missing at the end?', sp:()=>`${p}. Which letter is missing at the end of ${p}?`,
            visual:`${cr(w.e)}<span class="bigword">${p.slice(0,-1)}<span class="blank">_</span></span>`, opts:letOpts(o), ans:last}; }
@@ -570,7 +607,7 @@ function genL(type){
       if(H){ const C=pick('למנרס'.split('')); const V=[{d:C+'ָ',s:C+'ָה'},{d:C+'ִ',s:C+'ִי'},{d:C+'וּ',s:C+'וּ'},{d:C+'וֹ',s:C+'וֹ'},{d:C+'ֶ',s:C+'ֶה'}];
         const ch=shuffle(V).slice(0,n); const a=pick(ch);
         q={t:()=>'איזו הברה שומעים?', sp:()=>`הַקְשֵׁב: ${a.s}. ${a.s}. איזו הברה שמעת?`, visual:'<span class="cr m-wiggle">👂</span>', opts:ch.map(x=>({label:x.d,value:x.d})), ans:a.d}; }
-      else { const p=pick(BUILD.en[5]); const w=words.find(x=>x.w===p); const v=p[1];
+      else { const p=pick(BUILD[LB()][5]); const w=words.find(x=>x.w===p); const v=p[1];
         const o=shuffle([v,...shuffle('aeiou'.split('').filter(x=>x!==v)).slice(0,n-1)]);
         q={t:()=>'Which vowel is missing?', sp:()=>`${p}. Which vowel is missing in ${p}?`,
            visual:`${cr(w.e)}<span class="bigword">${p[0]}<span class="blank">_</span>${p[2]}</span>`, opts:letOpts(o), ans:v}; }
@@ -579,7 +616,7 @@ function genL(type){
       if(H){ const [stem,fin,reg,e,word]=pick(FINALS_HE); const other=pick('ךםןףץ'.split('').filter(x=>x!==fin));
         q={t:()=>'איזו אות באה בסוף המילה?', sp:()=>`${word}. איזו אות באה בסוף המילה ${word}?`,
            visual:`${cr(e)}<span class="bigword" dir="rtl">${stem}<span class="blank">?</span></span>`, opts:letOpts(shuffle([fin,reg,other])), ans:fin}; }
-      else { const g=pick(SWAP_EN); const [a,b]=shuffle(g).slice(0,2); const wa=words.find(x=>x.w===a), wb=words.find(x=>x.w===b);
+      else { const g=pick(SWAP[LB()]); const [a,b]=shuffle(g).slice(0,2); const wa=words.find(x=>x.w===a), wb=words.find(x=>x.w===b);
         const third=pick(words.filter(x=>!g.includes(x.w))); const opts=shuffle([wa,wb,third]);
         q={t:()=>`Change the first letter of “${a}” to ${b[0]}. What word is it?`, sp:()=>`${a}. Change the first letter to ${lname(b[0])}. What new word did you make?`,
            visual:`<span class="bigword">${a}</span><span class="op">→</span><span class="bigword"><span class="blank">${b[0]}</span>${a.slice(1)}</span>`, opts:picOpts(opts), ans:b}; }
@@ -845,9 +882,9 @@ function mountMagnet(el, metals, others){
 /* =====================================================================
    TIME TOWER — time & calendar station inside Discoveries Reef
    ===================================================================== */
-const DAYS = {en:['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'], he:['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת']};
-const DAY_INI = {en:['S','M','T','W','T','F','S'], he:['א','ב','ג','ד','ה','ו','ש']};
-const MONTHS = {en:['January','February','March','April','May','June','July','August','September','October','November','December'],
+const DAYS = {nl:['zondag','maandag','dinsdag','woensdag','donderdag','vrijdag','zaterdag'], en:['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'], he:['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת']};
+const DAY_INI = {nl:['Z','M','D','W','D','V','Z'], en:['S','M','T','W','T','F','S'], he:['א','ב','ג','ד','ה','ו','ש']};
+const MONTHS = {nl:['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'], en:['January','February','March','April','May','June','July','August','September','October','November','December'],
                 he:['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר']};
 const MORNING = [['🛏️','Wake up','להתעורר'],['🪥','Brush your teeth','לצחצח שיניים'],['🥣','Eat breakfast','לאכול ארוחת בוקר'],['🎒','Go to kindergarten','ללכת לגן']];
 const EVENING = [['🛁','Take a bath','להתרחץ'],['📖','Read a story','לקרוא סיפור'],['😴','Go to sleep','ללכת לישון']];
@@ -1194,13 +1231,17 @@ LEVELS[7] = { title:{en:'Admiral',he:'אדמירל'}, em:'🎖️', cls:'a7', su
 /* letters: second-grade reading */
 WORDS.en.push(['clock','⏰',1],['plant','🪴',1],['lemon','🍋',2],['cloud','☁️',1]);
 BUILD.en[7] = ['snake','train','clock','plant','lemon','tiger','robot','zebra','cloud'];
+BUILD.nl[7] = ['slang','trein','klok','plant','citroen','tijger','robot','zebra','wolk'];
 BUILD.he[7] = ['שעון','לימון','בלון','סירה','גמל','קפוד','שועל','עכבר','כוכב'];
 const SIGHT7 = { en:['because','where','there','said','could','would','their','which','about','every','after','again'],
+                 nl:['omdat','waar','daar','zei','kon','zou','hun','welke','over','elke','weer','alles'],
                  he:['כִּי','אֵיפֹה','שָׁם','אָמַר','יָכוֹל','אֲבָל','כָּל','עַכְשָׁו','אַחֲרֵי','לִפְנֵי','שׁוּב','מְאוֹד'] };
+/* Dutch: two letters, one sound (tweetekenklanken) at the start of a word; ei and ij sound the same, so they are never offered together */
+const DIGRAPH_NL = [['uil','🦉','ui'],['ui','🧅','ui'],['ijs','🍦','ij'],['ei','🥚','ei'],['eiland','🏝️','ei'],['auto','🚗','au'],['oester','🦪','oe'],['euro','💶','eu']];
 const DIGRAPH = [['ship','🚢','sh'],['shell','🐚','sh'],['sheep','🐑','sh'],['shoe','👟','sh'],['chick','🐥','ch'],['cheese','🧀','ch'],['chair','🪑','ch'],['cherry','🍒','ch'],['thumb','👍','th'],['whale','🐋','wh']];
 const HE_SPELL = [['תות','🍓','תּוּת'],['כלב','🐶','כֶּלֶב'],['קוף','🐒','קוֹף'],['חתול','🐱','חָתוּל'],['כוכב','⭐','כּוֹכָב'],['בית','🏠','בַּיִת'],['עכבר','🐭','עַכְבָּר'],['תפוח','🍎','תַּפּוּחַ']];
 const SOUNDALIKE = {'ת':'ט','ט':'ת','כ':'ק','ק':'כ','א':'ע','ע':'א','ח':'כ','ב':'ו','ו':'ב'};
-const PLACES = [{e:'🏞️',en:'park',he:'לפארק'},{e:'🏖️',en:'beach',he:'לים'},{e:'🌻',en:'garden',he:'לגינה'},{e:'🦁',en:'zoo',he:'לגן החיות'}];
+const PLACES = [{e:'🏞️',en:'park',he:'לפארק',nl:'naar het park'},{e:'🏖️',en:'beach',he:'לים',nl:'naar het strand'},{e:'🌻',en:'garden',he:'לגינה',nl:'naar de tuin'},{e:'🦁',en:'zoo',he:'לגן החיות',nl:'naar de dierentuin'}];
 const genL_base = genL;
 genL = function(type){
   if(age<7 && !['spell','story'].includes(type)) return genL_base(type);   // age-7-only kinds always use their own version
@@ -1211,12 +1252,15 @@ genL = function(type){
         for(let i=0;i<p.length && wrong.size<3;i++){ const r=SOUNDALIKE[p[i]]; if(r) wrong.add(p.slice(0,i)+r+p.slice(i+1)); }
         const opts=shuffle([p,...shuffle([...wrong]).slice(0,3)]);
         q={t:()=>'איך כותבים נכון את המילה?', sp:()=>`${nik}. איך כותבים נכון את המילה ${nik}?`, visual:cr(e), opts:opts.map(x=>({label:`<span class="wd">${x}</span>`,value:x})), ans:p}; }
-      else { const [w,e,dg]=pick(DIGRAPH);
+      else { const [w,e,dg]=pick(isNL()?DIGRAPH_NL:DIGRAPH);
+        const choices = isNL() ? shuffle([dg, ...shuffle(['ui','oe','au','eu'].filter(x=>x!==dg)).slice(0,3)]) : shuffle(['sh','ch','th','wh']);
         q={t:()=>'Which letters are missing?', sp:()=>`${w}. Which two letters make the first sound of ${w}?`, visual:`${cr(e)}<span class="bigword"><span class="blank">__</span>${w.slice(2)}</span>`,
-           opts:shuffle(['sh','ch','th','wh']).map(x=>({label:x,value:x})), ans:dg}; }
+           opts:choices.map(x=>({label:x,value:x})), ans:dg}; }
       break; }
-    case 'story': { const pool = H ? words.filter(x=>x.s>0&&x.s<=2) : words.filter(x=>[...READ_EN(),...BUILD.en[7]].includes(x.w)); const ws=threePics(pool), pl=pick(PLACES), askPlace=Math.random()<.4;
-      const text = H ? `${nm()} הלך ${pl.he}. שם הוא ראה ${ws[0].w}. ${nm()} שמח מאוד.` : `${nm()} went to the ${pl.en}. There he saw a ${ws[0].w}. ${nm()} was very happy.`;
+    case 'story': { const pool = H ? words.filter(x=>x.s>0&&x.s<=2) : words.filter(x=>[...READ_EN(),...BUILD[LB()][7]].includes(x.w)); const ws=threePics(pool), pl=pick(PLACES), askPlace=Math.random()<.4;
+      const text = H ? `${nm()} הלך ${pl.he}. שם הוא ראה ${ws[0].w}. ${nm()} שמח מאוד.`
+                 : isNL() ? `${nm()} ging ${pl.nl}. Daar zag ${isGirl()?'ze':'hij'} een ${ws[0].w}. ${nm()} was heel blij.`
+                 : `${nm()} went to the ${pl.en}. There he saw a ${ws[0].w}. ${nm()} was very happy.`;
       if(askPlace) q={t:()=>H?`קרא את הסיפור. לאן ${nm()} הלך?`:`Read the story. Where did ${nm()} go?`, visual:`<span class="bigword sent story" dir="auto">${text}</span>`,
         opts:shuffle([pl,...shuffle(PLACES.filter(x=>x!==pl)).slice(0,2)]).map(x=>({label:iconWord(x.e, x.en[0].toUpperCase()+x.en.slice(1), x.he.slice(1)),value:x.en})), ans:pl.en, small:true};
       else q={t:()=>H?`קרא את הסיפור. מה ${nm()} ראה?`:`Read the story. What did ${nm()} see?`, visual:`<span class="bigword sent story" dir="auto">${text}</span>`, opts:picOpts(shuffle(ws)), ans:ws[0].w};
@@ -1228,7 +1272,7 @@ genL = function(type){
       q={wide:true, t:()=>H?`פוצץ את כל הבועות שכתוב בהן: ${sw}`:`Pop every bubble that says “${sw}”!`, sp:()=>H?`פוצץ את כל הבועות שכתוב בהן ${sw}!`:`Pop every bubble that says ${sw}!`, mount:el=>mountPop(el,items,true)}; break; }
     case 'trace': { const L=pick((H?'ךםןףץשצקע':'bdpqgjfkyz').split(''));
       q={wide:true, t:()=>H?`עקוב עם האצבע על האות ${L}!`:`Trace the letter ${L} with your finger!`, sp:()=>H?`עקוב עם האצבע על האות ${lname(L)}!`:`Trace the letter ${lname(L)} with your finger!`, mount:el=>mountTrace(el,L)}; break; }
-    case 'readWord': if(!H){ const ws=threePics(words.filter(x=>[...READ_EN(),...BUILD.en[7]].includes(x.w)));
+    case 'readWord': if(!H){ const ws=threePics(words.filter(x=>[...READ_EN(),...BUILD[LB()][7]].includes(x.w)));
       q={t:()=>'Read the word. Which picture is it?', visual:`<span class="bigword">${ws[0].w}</span>`, opts:picOpts(shuffle(ws)), ans:ws[0].w}; } break;
   }
   if(!q) return genL_base(type);
@@ -1340,8 +1384,8 @@ const blank = () => ({4:{done:[],stars:0},5:{done:[],stars:0},6:{done:[],stars:0
 let progressAll = store.get('progress2', null);
 if(!progressAll){ const m=store.get('progress',blank()), l=store.get('progressL',blank()), copy=o=>JSON.parse(JSON.stringify(o));
   progressAll = {math:{en:m, he:copy(m)}, letters:{en:l, he:copy(l)}}; }
-for(const w of ['science','logic','feelings']) if(!progressAll[w]) progressAll[w] = {en:blank(), he:blank()};
-for(const w in progressAll) for(const l of ['en','he']){ progressAll[w][l]=progressAll[w][l]||blank(); if(!progressAll[w][l][7]) progressAll[w][l][7]={done:[],stars:0}; }
+for(const w of ['science','logic','feelings']) if(!progressAll[w]) progressAll[w] = {en:blank(), he:blank(), nl:blank()};
+for(const w in progressAll) for(const l of ['en','he','nl']){ progressAll[w][l]=progressAll[w][l]||blank(); for(const a of [4,5,6,7]) if(!progressAll[w][l][a]) progressAll[w][l][a]={done:[],stars:0}; }
 let world = store.get('world','math'); if(!progressAll[world]) world='math';
 const WORLD_DATA = { math:[STATIONS,STICKERS,LEVELS], letters:[STATIONS_L,STICKERS_L,LEVELS_L], science:[STATIONS_S,STICKERS_S,LEVELS_S],
                      logic:[STATIONS_C,STICKERS_C,LEVELS_C], feelings:[STATIONS_F,STICKERS_F,LEVELS_F] };
@@ -1419,10 +1463,10 @@ const T2 = {
        dataNote:"When on, the game sends anonymous events (like “station completed” or “question answered”) to help improve it. It never sends names, typed text or IP addresses. On by default; you can turn it off here at any time.",
        dataOff:'Usage data is not set up in this copy of the game, so nothing is sent.', practice:g=>`Practice with ${g}`, practiceOffer:'I made a special practice round with the tricky ones. Tap the Practice button!', practiceDone:n=>`Great practice, ${n}! The tricky ones are getting easier.`, lvUp:"You're getting really good at this! Next time it'll be a bit more challenging 🚀", skillsH:'Skills (the game adjusts these automatically)', lvHarder:'Harder', lvEasier:'Easier', lvOn:'On level', locked:'Finish every stop to open the treasure!', openIt:'Tap to open the treasure!', guideHi:(n,g)=>`Hi ${n}! I'm ${g.name.en} ${g.kind.en}, your guide here. Tap the first stop and let's go!`, welcome:(n,s)=>`Welcome back, ${n}! You have ${s} stars.`, welcome0:n=>`Welcome back, ${n}! Let's keep going.`, cont:'Continue the adventure', start:'Start the adventure',
        allDone:'You finished every world! 🎉', trophies:'My trophies', trophyTitle:n=>`${n}'s trophies`, howOld:'How old is our hero?', setupHi:"Welcome! Let's get ready for the adventure.", whatName:"What is your child's name?", namePh:'Name', boyGirl:'Boy or girl?', boy:'Boy', girl:'Girl', needName:'Type the name first', needGender:'Choose boy or girl', kid:'Child', next:'Next', obHi:"Hi! I'm Coco the parrot. Let's get ready for the adventure!", obGender:n=>`Is ${n} a boy or a girl?`, obAge:n=>`How old is ${n}?`, obLater:"You can change all of this later in the Parents' Corner.", obReady:n=>`Let's go, ${n}! 🎉`, years:a=>`${a} years old`,
-       gateQ:(a,b)=>`For grown-ups: what is ${a} × ${b}?`, parents:"Parents' Corner", settings:'Settings', nameEn:'Name in English', nameHe:'Name in Hebrew',
-       level:'Level (age)', progress:'Progress', progressNote:(a)=>`English trail, age ${a}. Each language keeps its own progress.`, firstTry:'The % shows how often he answered right on the first try.',
+       gateQ:(a,b)=>`For grown-ups: what is ${a} × ${b}?`, parents:"Parents' Corner", settings:'Settings', nameEn:'Name in English', nameHe:'Name in Hebrew', nameNl:'Name in Dutch',
+       level:'Level (age)', progress:'Progress', progressNote:(a)=>`English trail, age ${a}. Each language keeps its own progress.`, firstTry:'The % shows how often your child answered right on the first try.',
        needs:'Needs practice', none:'Not played yet', allGood:'No weak spots yet. Keep playing!', reset:'Reset this progress',
-       resetAge:a=>`Reset age ${a} (English)`, resetAll:'Reset everything (all ages, both languages)', confirm:'Tap again to reset',
+       resetAge:a=>`Reset age ${a} (English)`, resetAll:'Reset everything (all ages, all languages)', confirm:'Tap again to reset',
        voiceH:'Voice', voiceIn:'English voice', noVoice:'No English voice found on this device.', speed:'Speaking speed', slow:'Slow', normal:'Normal', test:'Test the voice',
        sample:()=>`Hi ${nm()}! A, B, C. Cat. Dog. Sun. What number comes after 3?`,
        voiceTip:'For a better voice: on iPad go to Settings → Accessibility → Spoken Content → Voices and download an "Enhanced" or "Premium" voice. On Android, install "Speech Services by Google" and download its voices. Then come back and pick it here.',
@@ -1431,16 +1475,16 @@ const T2 = {
        dataNote:'כשהאפשרות פעילה, המשחק שולח אירועים אנונימיים (כמו "סיום תחנה" או "מענה על שאלה") כדי לשפר אותו. הוא לעולם לא שולח שמות, טקסט שהוקלד או כתובות IP. פעיל כברירת מחדל; אפשר לכבות כאן בכל רגע.',
        dataOff:'נתוני שימוש לא הוגדרו בעותק הזה של המשחק, ולכן שום דבר לא נשלח.', practice:g=>`תרגול עם ${g}`, practiceOffer:'הכנתי לך סבב תרגול מיוחד עם מה שקשה. גע בכפתור התרגול!', practiceDone:n=>`תרגול מצוין, ${n}! הדברים הקשים נהיים קלים יותר.`, lvUp:'אתה ממש משתפר בזה! בפעם הבאה זה יהיה קצת יותר מאתגר 🚀', skillsH:'מיומנויות (המשחק מתאים אותן אוטומטית)', lvHarder:'מאתגר יותר', lvEasier:'קל יותר', lvOn:'ברמה', locked:'סיים את כל התחנות כדי לפתוח את האוצר!', openIt:'גע כדי לפתוח את האוצר!', guideHi:(n,g)=>{ const f=(g===GUIDES.science||g===GUIDES.feelings); return `שלום ${n}! אני ${g.name.he} ${g.kind.he}, ${f?'המדריכה':'המדריך'} שלך כאן. גע בתחנה הראשונה ויוצאים לדרך!`; }, welcome:(n,s)=>`ברוך שובך, ${n}! יש לך ${s} כוכבים.`, welcome0:n=>`ברוך שובך, ${n}! ממשיכים הלאה.`, cont:'ממשיכים בהרפתקה', start:'מתחילים בהרפתקה',
        allDone:'סיימת את כל העולמות! 🎉', trophies:'הגביעים שלי', trophyTitle:n=>`הגביעים של ${n}`, howOld:'בן כמה הגיבור שלנו?', setupHi:'ברוכים הבאים! בואו נתכונן להרפתקה.', whatName:'מה שם הילד או הילדה?', namePh:'שם', boyGirl:'בן או בת?', boy:'בן', girl:'בת', needName:'כתבו קודם את השם', needGender:'בחרו בן או בת', kid:'הילד או הילדה', next:'הבא', obHi:'שלום! אני קוקו התוכי. בואו נתכונן להרפתקה!', obGender:n=>`${n} בן או בת?`, obAge:n=>`${isGirl()?'בת':'בן'} כמה ${n}?`, obLater:'אפשר לשנות הכול אחר כך בפינת ההורים.', obReady:n=>`יוצאים לדרך, ${n}! 🎉`, years:a=>`${isGirl()?'בת':'בן'} ${a}`,
-       gateQ:(a,b)=>`למבוגרים: כמה זה ${a} × ${b}?`, parents:'פינת ההורים', settings:'הגדרות', nameEn:'השם באנגלית', nameHe:'השם בעברית',
+       gateQ:(a,b)=>`למבוגרים: כמה זה ${a} × ${b}?`, parents:'פינת ההורים', settings:'הגדרות', nameEn:'השם באנגלית', nameHe:'השם בעברית', nameNl:'השם בהולנדית',
        level:'רמה (גיל)', progress:'התקדמות', progressNote:(a)=>`המסלול בעברית, גיל ${a}. לכל שפה יש התקדמות משלה.`, firstTry:'האחוז מראה כמה פעמים ענה נכון כבר בניסיון הראשון.',
        needs:'כדאי לתרגל', none:'עוד לא שוחק', allGood:'אין עדיין נקודות חלשות. ממשיכים לשחק!', reset:'איפוס ההתקדמות הזאת',
-       resetAge:a=>`איפוס גיל ${a} (עברית)`, resetAll:'איפוס הכול (כל הגילים, שתי השפות)', confirm:'גע שוב כדי לאפס',
+       resetAge:a=>`איפוס גיל ${a} (עברית)`, resetAll:'איפוס הכול (כל הגילים, כל השפות)', confirm:'גע שוב כדי לאפס',
        voiceH:'קול', voiceIn:'קול בעברית', noVoice:'לא נמצא קול עברי במכשיר הזה.', speed:'מהירות דיבור', slow:'איטי', normal:'רגיל', test:'בדיקת הקול',
        sample:()=>`שָׁלוֹם ${nm()}! אָלֶף, בֵּית, גִּימֶל. בָּה, בִּי, בּוּ. אַרְיֵה. כֶּלֶב. שֶׁמֶשׁ.`,
        voiceTip:'לקול טוב יותר: באייפד היכנסו להגדרות ← נגישות ← תוכן מדובר ← קולות ← עברית, והורידו קול "משופר" (למשל כרמית). באנדרואיד התקינו את "Speech Services by Google" והורידו את הקול העברי. אחר כך חזרו לכאן ובחרו בו.',
        resetDone:'ההתקדמות אופסה.', device:'ההתקדמות נשמרת רק במכשיר ובדפדפן האלה. מחיקת נתוני הדפדפן או גלישה בחלון פרטי ימחקו אותה.', back:'חזרה למשחק' }
 };
-const u = () => T2[lang];
+const u = () => T2[lang] || T2.en;
 function nextStation(){
   const order=[world, ...WORLD_ORDER.filter(w=>w!==world)];
   for(const w of order){ const d=progOf(w,savedAge).done.length, n=stationsOf(w,savedAge).length; if(d<n) return {w,i:d}; }
@@ -1459,7 +1503,7 @@ function topbar(back){
     ${back?`<button class="iconbtn" id="back" aria-label="Back">${ICON.back}</button>`:`<div class="brand">${GUIDE} ${t().title}</div>`}
     <div class="tools">
       ${p?`<span class="pill">⭐ ${p.stars}</span>`:''}
-      <button class="langbtn" id="lang" aria-label="Switch language">${ICON.globe}<span>${t().langBtn}</span></button>
+      <button class="langbtn" id="lang" aria-label="Language" aria-haspopup="true">${ICON.globe}<span>${LANGS[lang]}</span></button>
       <button class="iconbtn" id="voice" aria-label="Voice on or off">${voiceOn?ICON.soundOn:ICON.soundOff}</button>
       ${canFS?`<button class="iconbtn" id="fs" aria-label="Full screen">${ICON.full}</button>`:''}
       ${back?'':`<button class="iconbtn" id="pc" aria-label="Parents' Corner">${ICON.lock}</button>`}
@@ -1467,16 +1511,32 @@ function topbar(back){
 }
 function bindTop(backFn){
   const b=$('#back'); if(b) b.onclick=()=>{ busy=false; backFn(); };
-  $('#lang').onclick=()=>{ lang = he()?'en':'he'; store.set('lang',lang); track('Language Changed',{to:lang}); syncUser(); applyLang(); try{speechSynthesis.cancel()}catch(e){};
-    busy=false;
-    if(age && !document.querySelector('.trail')) map(false);   // mid-station: go to this language's own map
-    else current(); };
+  $('#lang').onclick=e=>{ e.stopPropagation(); langMenu($('#lang')); };
   $('#voice').onclick=()=>{ voiceOn=!voiceOn; store.set('voice',voiceOn); track('Voice Toggled',{voice_on:voiceOn}); if(!voiceOn) try{speechSynthesis.cancel()}catch(e){}; $('#voice').innerHTML=voiceOn?ICON.soundOn:ICON.soundOff; };
   const f=$('#fs'); if(f) f.onclick=()=>{ try{
     const d=document, el=d.documentElement;
     if(d.fullscreenElement||d.webkitFullscreenElement){ (d.exitFullscreen||d.webkitExitFullscreen).call(d); }
     else { const r=(el.requestFullscreen||el.webkitRequestFullscreen).call(el); if(r&&r.catch) r.catch(()=>{}); }
   }catch(e){} };
+}
+
+/* ---------- language picker: English, Hebrew, Dutch ---------- */
+function setLang(l){
+  if(l===lang) return;
+  lang=l; store.set('lang',lang); track('Language Changed',{to:lang}); syncUser(); applyLang(); try{speechSynthesis.cancel()}catch(e){};
+  busy=false;
+  if(age && !document.querySelector('.trail')) map(false);   // mid-station: go to this language's own map
+  else current();
+}
+function langMenu(btn){
+  const old=document.querySelector('.langmenu'); if(old){ old.remove(); return; }
+  const m=document.createElement('div'); m.className='langmenu'; m.setAttribute('role','menu');
+  m.innerHTML=Object.entries(LANGS).map(([k,v])=>`<button role="menuitemradio" aria-checked="${k===lang}" class="${k===lang?'on':''}" data-l="${k}" lang="${k}">${v}</button>`).join('');
+  document.body.appendChild(m);
+  const r=btn.getBoundingClientRect(), z=appZoom();
+  m.style.top=(r.bottom+8)+'px'; m.style.left=Math.max(8, Math.min(innerWidth-m.offsetWidth-8, r.left+r.width/2-m.offsetWidth/2))+'px';
+  m.querySelectorAll('button').forEach(b=>b.onclick=()=>{ m.remove(); tone([600,800],.06); setLang(b.dataset.l); });
+  setTimeout(()=>document.addEventListener('pointerdown', function off(ev){ if(!m.contains(ev.target)){ m.remove(); document.removeEventListener('pointerdown', off, true); } }, true), 0);
 }
 
 /* ---------- onboarding: three short steps with Coco (name → boy or girl → age); all can be changed later in the Parents' Corner ---------- */
@@ -1486,7 +1546,7 @@ function onboard(step){
   setWorldBg('home'); hideBuddy();
   step = step || obStep || (!hasName() ? 1 : !gender ? 2 : 3); obStep = step;
   current = () => onboard(obStep);
-  const typed = setupDraft ?? (names[lang] || names[lang==='he'?'en':'he'] || '');
+  const typed = setupDraft ?? (names[lang] || names.en || names.he || names.nl || '');
   const kid = esc(typed.trim() || nm());
   const say = step===1 ? u().obHi : step===2 ? u().obGender(kid) : u().obAge(kid);
   const dots = [1,2,3].map(i=>`<span class="obdot ${i===step?'on':i<step?'done':''}"></span>`).join('');
@@ -1495,7 +1555,7 @@ function onboard(step){
                 <input id="kidname" class="obname" maxlength="14" autocomplete="off" autocapitalize="words" enterkeyhint="next" placeholder="${u().namePh}" value="${esc(typed)}">
                 <button class="btn gobtn" id="obnext">${u().next} ${ICON_NEXT}</button>`
   : step===2 ? `<div class="genders">${[['boy','👦'],['girl','👧']].map(([g,e])=>`<button class="gbtn ${gender===g?'on':''}" data-g="${g}" aria-pressed="${gender===g}"><span class="em">${e}</span><span class="t">${u()[g]}</span></button>`).join('')}</div>`
-  :            `<div class="ages ob">${[4,5,6,7].map(a=>`<button class="age ${LV()[a].cls} ${savedAge===a?'on':''}" data-age="${a}"><span class="em">${['🐣','⛵','🧭','🎖️'][a-4]}</span><span class="t">${u().years(a)}</span><span class="s">${LV()[a].sub[lang]}</span></button>`).join('')}</div>`;
+  :            `<div class="ages ob">${[4,5,6,7].map(a=>`<button class="age ${LV()[a].cls} ${savedAge===a?'on':''}" data-age="${a}"><span class="em">${['🐣','⛵','🧭','🎖️'][a-4]}</span><span class="t">${u().years(a)}</span><span class="s">${LV()[a].sub[LK()]}</span></button>`).join('')}</div>`;
   app.innerHTML = topbar(false) + `
   <div class="onboard pop">
     <div class="obtop">${step>1?`<button class="obback" id="obback" aria-label="${u().back}">${ICON.back}</button>`:'<span></span>'}<div class="obdots" role="img" aria-label="${step} / 3">${dots}</div><span></span></div>
@@ -1535,7 +1595,7 @@ function home(){
   if(!savedAge || !hasName() || !gender){ onboard(); return; }   // first time: the three setup steps
   const stars=totalStars(), nx=nextStation();
   const played = stars>0 || WORLD_ORDER.some(w=>[4,5,6,7].some(a=>progOf(w,a).done.length>0));
-  const nxLabel = nx ? (()=>{ const s=stationsOf(nx.w,savedAge)[nx.i]; return `${WICON[nx.w]} ${t()[nx.w]} · ${s.icon} ${s.name[lang]}`; })() : '';
+  const nxLabel = nx ? (()=>{ const s=stationsOf(nx.w,savedAge)[nx.i]; return `${WICON[nx.w]} ${t()[nx.w]} · ${s.icon} ${s.name[LK()]}`; })() : '';
   app.innerHTML = topbar(false) + `
   <div class="hero pop">
     <div class="guide">${GUIDE}</div>
@@ -1545,13 +1605,13 @@ function home(){
   ${nx ? `<button class="cont" id="cont"><span class="cplay">${ICON.play}</span><span class="ctxt"><b>${played?u().cont:u().start}</b><small>${nxLabel}</small></span></button>`
        : `<button class="cont" id="cont"><span class="cplay">🏆</span><span class="ctxt"><b>${u().allDone}</b></span></button>`}
   <div class="wcards">${WORLD_ORDER.map(w=>{ const p=progOf(w,savedAge), n=stationsOf(w,savedAge).length;
-    return `<button class="wcard ${p.done.length>=n?'full':''}" data-w="${w}">${wbadge(w,'lg')}<span class="wname">${t()[w]}</span><span class="wguide">${GUIDES[w].e} ${GUIDES[w].name[lang]}</span>${ring(p.done.length,n)}<span class="wstar">⭐ ${p.stars}</span></button>`; }).join('')}</div>
+    return `<button class="wcard ${p.done.length>=n?'full':''}" data-w="${w}">${wbadge(w,'lg')}<span class="wname">${t()[w]}</span><span class="wguide">${GUIDES[w].e} ${GUIDES[w].name[LK()]}</span>${ring(p.done.length,n)}<span class="wstar">⭐ ${p.stars}</span></button>`; }).join('')}</div>
   <div class="row"><button class="btn ghost" id="shelf">🏆 ${u().trophies}</button></div>`;
   bindTop(); bindPC();
   $('#cont').onclick=()=>{ if(!nx){ shelf(); return; } world=nx.w; store.set('world',world); age=savedAge; tone([520,780],.08); startStation(nx.i); };
   app.querySelectorAll('.wcard').forEach(b=>b.onclick=()=>{ world=b.dataset.w; store.set('world',world); age=savedAge; tone([520,780],.08); map(true); });
   $('#shelf').onclick=()=>{ track('Trophy Shelf Viewed'); shelf(); };
-  if(!home.greeted){ home.greeted=true; setTimeout(()=>{ if(document.querySelector('#cont')) buddySay(HOME_LINES[lang][0](nm()), {speak:false}); }, 900); }
+  if(!home.greeted){ home.greeted=true; setTimeout(()=>{ if(document.querySelector('#cont')) buddySay(HOME_LINES[LK()][0](nm()), {speak:false}); }, 900); }
 }
 function bindPC(){ const b=$('#pc'); if(b) b.onclick=gate; }
 
@@ -1583,8 +1643,8 @@ function parents(msg=''){
   const weak=[];
   const worldBlocks = WORLD_ORDER.map(w=>{ const p=progOf(w,A), sts=stationsOf(w,A);
     const rows = sts.map((s,i)=>{ const st=stats[statKey(w,A,i)]; const pct = st&&st.n ? Math.round(100*st.f/st.n) : null;
-      if(pct!==null && st.n>=4 && pct<60) weak.push(`${WICON[w]} ${s.name[lang]} (${pct}%)`);
-      return `<tr><td>${p.done.includes(i)?'✅':'⬜'}</td><td>${s.icon} ${s.name[lang]}</td><td class="pct ${pct===null?'':pct<60?'lo':pct<80?'mid':'hi'}">${pct===null?u().none:pct+'%'}</td></tr>`; }).join('');
+      if(pct!==null && st.n>=4 && pct<60) weak.push(`${WICON[w]} ${s.name[LK()]} (${pct}%)`);
+      return `<tr><td>${p.done.includes(i)?'✅':'⬜'}</td><td>${s.icon} ${s.name[LK()]}</td><td class="pct ${pct===null?'':pct<60?'lo':pct<80?'mid':'hi'}">${pct===null?u().none:pct+'%'}</td></tr>`; }).join('');
     return `<details class="pworld"><summary>${wbadge(w,'sm')} ${t()[w]} <span class="wstar">${p.done.length}/${sts.length} · ⭐ ${p.stars}</span></summary><table class="ptable"><tbody>${rows}</tbody></table>${skillRows(w,A)}</details>`; }).join('');
   app.innerHTML = topbar(true) + `
   <div class="pcard2 pop">
@@ -1593,6 +1653,7 @@ function parents(msg=''){
     <div class="pform">
       <label for="nmEn">${u().nameEn}</label><input id="nmEn" value="${esc(names.en||'')}" maxlength="14" autocomplete="off">
       <label for="nmHe">${u().nameHe}</label><input id="nmHe" value="${esc(names.he||'')}" maxlength="14" autocomplete="off" dir="rtl">
+      <label for="nmNl">${u().nameNl}</label><input id="nmNl" value="${esc(names.nl||'')}" maxlength="14" autocomplete="off">
       <span class="lbl">${u().kid}</span><div class="chips" id="kidg">${['boy','girl'].map(g=>`<button class="chip ${gender===g?'on':''}" data-g="${g}">${g==='boy'?'👦':'👧'} ${u()[g]}</button>`).join('')}</div>
       <span class="lbl">${u().level}</span><div class="chips">${[4,5,6,7].map(a=>`<button class="chip ${a===A?'on':''}" data-a="${a}">${t().age} ${a}</button>`).join('')}</div>
     </div>
@@ -1620,7 +1681,7 @@ function parents(msg=''){
   bindTop(home);
   // names: one of the two must always be filled in; emptying both brings the last name back
   const saved = {...names};
-  [['#nmEn','en'],['#nmHe','he']].forEach(([id,l])=>{ const el=$(id);
+  [['#nmEn','en'],['#nmHe','he'],['#nmNl','nl']].forEach(([id,l])=>{ const el=$(id);
     el.oninput=()=>{ names[l]=el.value.trim(); if(hasName()){ store.set('names',names); Object.assign(saved,names); } };
     el.onblur=()=>{ if(!hasName()){ Object.assign(names,saved); el.value=names[l]||''; parents(u().needName); } }; });
   app.querySelectorAll('#kidg .chip').forEach(b=>b.onclick=()=>{ gender=b.dataset.g; store.set('gender',gender); parents(); });
@@ -1635,7 +1696,7 @@ function parents(msg=''){
     Object.keys(skills).forEach(k=>{ const [l,,a]=k.split('|'); if(l===lang && +a===A) delete skills[k]; }); store.set('skills',skills);
     save(); store.set('stats',stats); track('Progress Reset',{scope:'age', age_level:A}); syncUser(); parents(u().resetDone); });
   twoTap($('#rstAll'), ()=>{   // everything: every world, every level, both languages
-    WORLD_ORDER.forEach(w=>{ progressAll[w]={en:blank(), he:blank()}; });
+    WORLD_ORDER.forEach(w=>{ progressAll[w]={en:blank(), he:blank(), nl:blank()}; });
     Object.keys(stats).forEach(k=>delete stats[k]);
     Object.keys(skills).forEach(k=>delete skills[k]); store.set('skills',skills);
     save(); store.set('stats',stats); track('Progress Reset',{scope:'all'}); syncUser(); parents(u().resetDone); });
@@ -1649,14 +1710,14 @@ function map(greet){
   current=()=>map(false); setWorldBg(world);
   const P=PR()[age], L=LV()[age]; const next=P.done.length;
   const allDone = next>=ST().length, weakN = weakSkills(world,age).length;
-  const msg = allDone ? t().mapAll(nm()) : next===0 ? u().guideHi(nm(), G()) : t().mapNext(nm(), ST()[next].name[lang]);
+  const msg = allDone ? t().mapAll(nm()) : next===0 ? u().guideHi(nm(), G()) : t().mapNext(nm(), ST()[next].name[LK()]);
   app.innerHTML = topbar(true) + `
-  <div class="maphead pop">${wbadge(world,'lg')}<div class="txt"><b>${t()[world]} · ${L.em} ${t().age} ${age} · ${L.title[lang]}</b><div>${esc(msg)}</div></div></div>
-  ${weakN?`<div class="row"><button class="btn practice" id="practice">🎯 ${u().practice(G().name[lang])}</button></div>`:''}
+  <div class="maphead pop">${wbadge(world,'lg')}<div class="txt"><b>${t()[world]} · ${L.em} ${t().age} ${age} · ${L.title[LK()]}</b><div>${esc(msg)}</div></div></div>
+  ${weakN?`<div class="row"><button class="btn practice" id="practice">🎯 ${u().practice(G().name[LK()])}</button></div>`:''}
   <div class="trail">
     ${ST().map((s,i)=>{ const done=P.done.includes(i), open=i===next, locked=i>next;
       return `<button class="stop ${done?'done':''} ${open?'open':''}" data-i="${i}" ${locked?'disabled':''}>
-        <span class="ic">${done?'✅':s.icon}</span><span><div class="nm">${s.name[lang]}</div><div class="st">${done?t().done:locked?t().locked:t().go}</div></span></button>`; }).join('')}
+        <span class="ic">${done?'✅':s.icon}</span><span><div class="nm">${s.name[LK()]}</div><div class="st">${done?t().done:locked?t().locked:t().go}</div></span></button>`; }).join('')}
   </div>
   <button class="chest ${allDone?'ready':''}" id="chest" aria-label="Treasure chest" ${allDone?'':'disabled'}>${chestSvg(allDone)}<span class="chestcap">${allDone?u().openIt:u().locked}</span></button>
   ${allDone?`<div class="row"><button class="btn" id="again">${t().again}</button></div>`:''}`;
@@ -1718,10 +1779,10 @@ function showQ(fresh){
   const q=qs[qIdx], spk=()=>q.sp?q.sp():q.t();
   if(fresh){ firstTry=true; busy=false; cheerIdx=rnd(0,3); }
   current=()=>showQ(false); setWorldBg(world);
-  const cheer = qIdx===0 ? s.intro[lang] : t().cheer[cheerIdx];
+  const cheer = qIdx===0 ? s.intro[LK()] : t().cheer[cheerIdx];
   app.innerHTML = topbar(true) + `
   <div class="qcard pop ${q.wide?'wide':''} ${world==='letters'&&he()?'nq':''}">
-    <div class="story"><span class="g">${G().e}</span><div class="bubble"><b>${s.icon} ${s.name[lang]}</b> · ${cheer}</div></div>
+    <div class="story"><span class="g">${G().e}</span><div class="bubble"><b>${s.icon} ${s.name[LK()]}</b> · ${cheer}</div></div>
     <div class="dots">${qs.map((_,i)=>`<span class="${i<qIdx?'on':i===qIdx?'cur':''}"></span>`).join('')}</div>
     <h2 class="qtext"><span>${esc(q.t())}</span><button class="say" id="say" aria-label="Read it again">${ICON.soundOn}<span>${he()?'הקשב':'Listen'}</span></button></h2>
     ${q.visual?`<div class="visual">${q.visual}</div>`:''}
@@ -1735,10 +1796,10 @@ function showQ(fresh){
     c.classList.remove('boing'); void c.offsetWidth; c.classList.add('boing'); tone([500+Math.random()*500],.08);
     c.addEventListener('animationend',()=>c.classList.remove('boing'),{once:true}); };
   document.body.classList.add('quiz');
-  { const sg=$('.qcard .story .g'); if(sg){ sg.setAttribute('role','button'); sg.setAttribute('aria-label',G().name[lang]); sg.onclick=buddyTap; } }
+  { const sg=$('.qcard .story .g'); if(sg){ sg.setAttribute('role','button'); sg.setAttribute('aria-label',G().name[LK()]); sg.onclick=buddyTap; } }
   if(q.mount) q.mount($('#task'));
   else app.querySelectorAll('.ans').forEach(b=>b.onclick=()=>answer(b, q.opts[+b.dataset.i].value));
-  speak(qIdx===0 ? `${s.intro[lang]} ${spk()}` : spk());
+  speak(qIdx===0 ? `${s.intro[LK()]} ${spk()}` : spk());
   if(fresh){ wrongs=0; qStart=Date.now(); hintShown=false; }
   armIdle();
 }
@@ -1754,7 +1815,7 @@ function correct(){
   app.querySelectorAll('.ans,.check').forEach(b=>b.disabled=true);
   if(firstTry){ stationStars++; PR()[age].stars++; save(); }
   clearTimeout(idleT);
-  if(firstTry){ streak++; if(streak%3===0) setTimeout(()=>buddySay(pick(BUDDY_TXT[lang].streak),{hop:true,speak:false}),400); } else streak=0;
+  if(firstTry){ streak++; if(streak%3===0) setTimeout(()=>buddySay(pick(BUDDY_TXT[LK()].streak),{hop:true,speak:false}),400); } else streak=0;
   { const q=qs[qIdx], dl=recordSkill(q, firstTry); if(dl>0) setTimeout(()=>buddySay(u().lvUp,{hop:true,speak:false}),900);
     track('Question Answered',{world, station_index:stIdx, is_practice:stIdx<0, question_index:qIdx, skill:q.skill, question_type:q.tok, difficulty_level:q.lvl||0,
       first_try:firstTry, attempts:wrongs+1, time_to_answer_ms:Date.now()-qStart, hint_shown:hintShown, interaction:q.mount?'task':'choice'});
@@ -1770,7 +1831,7 @@ function miss(text){
   firstTry=false; sfx.bad(); wrongs++; streak=0;
   const fb=$('#fb'), w = text || pick(t().oops);
   fb.className='feedback bad'; fb.textContent=w;
-  if(wrongs===2){ buddySay(pickLine(G().hints[lang]), {hop:true}); hintShown=true; track('Hint Shown',{world, reason:'second_wrong_try', skill:(qs[qIdx]||{}).skill}); }   // second wrong try: the guide gives a hint
+  if(wrongs===2){ buddySay(pickLine(G().hints[LK()]), {hop:true}); hintShown=true; track('Hint Shown',{world, reason:'second_wrong_try', skill:(qs[qIdx]||{}).skill}); }   // second wrong try: the guide gives a hint
   else speak(w);
   armIdle();
 }
@@ -1787,7 +1848,7 @@ function stationDone(){
 function renderSticker(loud){
   current=()=>renderSticker(false); setWorldBg(world);
   const s=ST()[stIdx];
-  const msg=t().sticker(nm(), s.name[lang]);
+  const msg=t().sticker(nm(), s.name[LK()]);
   app.innerHTML = topbar(true) + `
   <div class="celebrate pop">
     <div class="huge">${STK()[stIdx]}</div>
@@ -1886,10 +1947,10 @@ function showBuddy(theme){
   if(changed){ b.classList.remove("talk"); clearTimeout(buddyHideT); }   // a new guide never keeps the previous guide's words
   const g = theme==='home' ? GUIDES.math : G(theme);
   b.className = 'bd-'+theme; b.querySelector('#bface').textContent = g.e;
-  b.querySelector('#buddyBtn').setAttribute('aria-label', `${g.name[lang]} ${g.kind[lang]}`);
+  b.querySelector('#buddyBtn').setAttribute('aria-label', `${g.name[LK()]} ${g.kind[LK()]}`);
 }
 function hideBuddy(){ const b=document.getElementById('buddy'); if(b){ b.hidden=true; b.classList.remove('talk'); } clearTimeout(idleT); }
-function buddyTap(){ const lines = buddyTheme==='home' ? HOME_LINES[lang].map(f=>f(nm())) : G(buddyTheme).facts[lang];
+function buddyTap(){ const lines = buddyTheme==='home' ? HOME_LINES[LK()].map(f=>f(nm())) : G(buddyTheme).facts[LK()];
   buddySay(pickLine(lines), {hop:true}); tone([700,950],.07); track('Guide Tapped',{guide:buddyTheme}); }
 function buddySay(text, opt={}){
   /* during a question the guide talks in the story bubble at the top of the card: it can never cover an answer */
@@ -1926,7 +1987,7 @@ addEventListener('scroll', ()=>{ const b=document.getElementById('buddy'); if(b 
 function armIdle(){   // if a question sits unanswered for a while, the guide offers help
   clearTimeout(idleT); const here=qIdx, qs0=qs;
   idleT=setTimeout(()=>{ if(busy || qs!==qs0 || qIdx!==here || !document.querySelector('.qcard')) return;
-    buddySay(`${BUDDY_TXT[lang].idle(nm())} ${pickLine(G().hints[lang])}`, {hop:true});
+    buddySay(`${BUDDY_TXT[LK()].idle(nm())} ${pickLine(G().hints[LK()])}`, {hop:true});
     hintShown=true; track('Hint Shown',{world, reason:'idle', skill:(qs[qIdx]||{}).skill}); }, 22000);
 }
 

@@ -19,7 +19,7 @@ Before going public, add a short privacy notice for parents and check it against
 
 | Property | Type | Example | Notes |
 |---|---|---|---|
-| `language` | string | `en`, `he` | Current game language |
+| `language` | string | `en`, `he`, `nl` | Current game language |
 | `age_level` | number | `4`–`7` | The level being played (the child's saved age) |
 
 ## Events
