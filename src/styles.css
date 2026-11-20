@@ -765,3 +765,17 @@ body.quiz .wrap{padding-bottom:12px}
 .langmenu button{border:none;background:transparent;color:var(--ink);font:inherit;font-weight:800;font-size:1.15rem;padding:12px 22px;border-radius:12px;text-align:start;min-width:170px}
 .langmenu button.on{background:var(--sun);color:#3a2a00}
 .langmenu button:not(.on):hover{background:var(--sky)}
+/* "make it an app" banner on the home screen */
+.instbar{position:fixed;z-index:45;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);width:min(640px,calc(100vw - 32px));box-sizing:border-box;
+  display:flex;align-items:center;gap:14px;background:var(--card);border-radius:22px;padding:12px 14px;box-shadow:0 10px 30px rgba(0,0,0,.25);border:3px solid var(--sun);animation:instIn .45s ease-out .8s both}
+.instbar.out{animation:instOut .25s ease-in both}
+@keyframes instIn{from{opacity:0;transform:translate(-50%,40px)}to{opacity:1;transform:translate(-50%,0)}}
+@keyframes instOut{to{opacity:0;transform:translate(-50%,40px)}}
+.instic{width:56px;height:56px;border-radius:14px;flex:none;box-shadow:0 2px 6px rgba(0,0,0,.2)}
+.insttx{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.insttx b{font-family:var(--f-display);font-size:1.25rem;color:var(--title)}
+.insttx span{color:var(--ink-soft);font-weight:700;font-size:1rem;line-height:1.35}
+.instgo{min-height:52px;padding:10px 22px;flex:none}
+.instx{border:none;background:transparent;color:var(--ink-soft);font-size:1.4rem;width:44px;height:44px;border-radius:50%;flex:none;cursor:pointer}
+.instx:hover{background:var(--sky)}
+@media (max-width:600px){ .instbar{flex-wrap:wrap;gap:10px} .instic{width:44px;height:44px} .insttx b{font-size:1.1rem} .instgo{order:3;width:100%} }

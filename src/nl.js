@@ -317,6 +317,8 @@
     'Share {} cookies fairly between 4 friends!':'Verdeel {1} koekjes eerlijk tussen 4 vrienden!',
 
     // ---------- home, onboarding, practice, Parents' Corner ----------
+    'Make Adventure Bay an app!':'Maak van Avonturenbaai een app!', 'Add it to your home screen: it opens full screen and works without internet.':'Zet hem op je beginscherm: hij opent schermvullend en werkt ook zonder internet.',
+    'Install':'Installeren', 'On iPad or iPhone: tap Share ⬆️, then “Add to Home Screen”.':'Op iPad of iPhone: tik op Deel ⬆️ en dan op “Zet op beginscherm”.', 'Not now':'Niet nu',
     'Practice':'Oefenen', "Let's practice the tricky ones together!":'Laten we samen de lastige oefenen!',
     'Hi {}! Ready for an adventure?':'Hoi {1}! Klaar voor een avontuur?', 'Usage data':'Gebruiksgegevens', 'Share anonymous usage data':'Anonieme gebruiksgegevens delen', 'Off':'Uit', 'On':'Aan',
     'When on, the game sends anonymous events (like “station completed” or “question answered”) to help improve it. It never sends names, typed text or IP addresses. On by default; you can turn it off here at any time.':

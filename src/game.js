@@ -1462,7 +1462,7 @@ const T2 = {
   en:{ hello:n=>`Hi ${n}! Ready for an adventure?`, dataH:'Usage data', dataShare:'Share anonymous usage data', off:'Off', on:'On',
        dataNote:"When on, the game sends anonymous events (like “station completed” or “question answered”) to help improve it. It never sends names, typed text or IP addresses. On by default; you can turn it off here at any time.",
        dataOff:'Usage data is not set up in this copy of the game, so nothing is sent.', practice:g=>`Practice with ${g}`, practiceOffer:'I made a special practice round with the tricky ones. Tap the Practice button!', practiceDone:n=>`Great practice, ${n}! The tricky ones are getting easier.`, lvUp:"You're getting really good at this! Next time it'll be a bit more challenging 🚀", skillsH:'Skills (the game adjusts these automatically)', lvHarder:'Harder', lvEasier:'Easier', lvOn:'On level', locked:'Finish every stop to open the treasure!', openIt:'Tap to open the treasure!', guideHi:(n,g)=>`Hi ${n}! I'm ${g.name.en} ${g.kind.en}, your guide here. Tap the first stop and let's go!`, welcome:(n,s)=>`Welcome back, ${n}! You have ${s} stars.`, welcome0:n=>`Welcome back, ${n}! Let's keep going.`, cont:'Continue the adventure', start:'Start the adventure',
-       allDone:'You finished every world! 🎉', trophies:'My trophies', trophyTitle:n=>`${n}'s trophies`, howOld:'How old is our hero?', setupHi:"Welcome! Let's get ready for the adventure.", whatName:"What is your child's name?", namePh:'Name', boyGirl:'Boy or girl?', boy:'Boy', girl:'Girl', needName:'Type the name first', needGender:'Choose boy or girl', kid:'Child', next:'Next', obHi:"Hi! I'm Coco the parrot. Let's get ready for the adventure!", obGender:n=>`Is ${n} a boy or a girl?`, obAge:n=>`How old is ${n}?`, obLater:"You can change all of this later in the Parents' Corner.", obReady:n=>`Let's go, ${n}! 🎉`, years:a=>`${a} years old`,
+       allDone:'You finished every world! 🎉', trophies:'My trophies', trophyTitle:n=>`${n}'s trophies`, howOld:'How old is our hero?', setupHi:"Welcome! Let's get ready for the adventure.", whatName:"What is your child's name?", instT:'Make Adventure Bay an app!', instSub:'Add it to your home screen: it opens full screen and works without internet.', instBtn:'Install', instIOS:'On iPad or iPhone: tap Share ⬆️, then “Add to Home Screen”.', instClose:'Not now', namePh:'Name', boyGirl:'Boy or girl?', boy:'Boy', girl:'Girl', needName:'Type the name first', needGender:'Choose boy or girl', kid:'Child', next:'Next', obHi:"Hi! I'm Coco the parrot. Let's get ready for the adventure!", obGender:n=>`Is ${n} a boy or a girl?`, obAge:n=>`How old is ${n}?`, obLater:"You can change all of this later in the Parents' Corner.", obReady:n=>`Let's go, ${n}! 🎉`, years:a=>`${a} years old`,
        gateQ:(a,b)=>`For grown-ups: what is ${a} × ${b}?`, parents:"Parents' Corner", settings:'Settings', nameEn:'Name in English', nameHe:'Name in Hebrew', nameNl:'Name in Dutch',
        level:'Level (age)', progress:'Progress', progressNote:(a)=>`English trail, age ${a}. Each language keeps its own progress.`, firstTry:'The % shows how often your child answered right on the first try.',
        needs:'Needs practice', none:'Not played yet', allGood:'No weak spots yet. Keep playing!', reset:'Reset this progress',
@@ -1474,7 +1474,7 @@ const T2 = {
   he:{ hello:n=>`שלום ${n}! מוכן להרפתקה?`, dataH:'נתוני שימוש', dataShare:'שיתוף נתוני שימוש אנונימיים', off:'כבוי', on:'פעיל',
        dataNote:'כשהאפשרות פעילה, המשחק שולח אירועים אנונימיים (כמו "סיום תחנה" או "מענה על שאלה") כדי לשפר אותו. הוא לעולם לא שולח שמות, טקסט שהוקלד או כתובות IP. פעיל כברירת מחדל; אפשר לכבות כאן בכל רגע.',
        dataOff:'נתוני שימוש לא הוגדרו בעותק הזה של המשחק, ולכן שום דבר לא נשלח.', practice:g=>`תרגול עם ${g}`, practiceOffer:'הכנתי לך סבב תרגול מיוחד עם מה שקשה. גע בכפתור התרגול!', practiceDone:n=>`תרגול מצוין, ${n}! הדברים הקשים נהיים קלים יותר.`, lvUp:'אתה ממש משתפר בזה! בפעם הבאה זה יהיה קצת יותר מאתגר 🚀', skillsH:'מיומנויות (המשחק מתאים אותן אוטומטית)', lvHarder:'מאתגר יותר', lvEasier:'קל יותר', lvOn:'ברמה', locked:'סיים את כל התחנות כדי לפתוח את האוצר!', openIt:'גע כדי לפתוח את האוצר!', guideHi:(n,g)=>{ const f=(g===GUIDES.science||g===GUIDES.feelings); return `שלום ${n}! אני ${g.name.he} ${g.kind.he}, ${f?'המדריכה':'המדריך'} שלך כאן. גע בתחנה הראשונה ויוצאים לדרך!`; }, welcome:(n,s)=>`ברוך שובך, ${n}! יש לך ${s} כוכבים.`, welcome0:n=>`ברוך שובך, ${n}! ממשיכים הלאה.`, cont:'ממשיכים בהרפתקה', start:'מתחילים בהרפתקה',
-       allDone:'סיימת את כל העולמות! 🎉', trophies:'הגביעים שלי', trophyTitle:n=>`הגביעים של ${n}`, howOld:'בן כמה הגיבור שלנו?', setupHi:'ברוכים הבאים! בואו נתכונן להרפתקה.', whatName:'מה שם הילד או הילדה?', namePh:'שם', boyGirl:'בן או בת?', boy:'בן', girl:'בת', needName:'כתבו קודם את השם', needGender:'בחרו בן או בת', kid:'הילד או הילדה', next:'הבא', obHi:'שלום! אני קוקו התוכי. בואו נתכונן להרפתקה!', obGender:n=>`${n} בן או בת?`, obAge:n=>`${isGirl()?'בת':'בן'} כמה ${n}?`, obLater:'אפשר לשנות הכול אחר כך בפינת ההורים.', obReady:n=>`יוצאים לדרך, ${n}! 🎉`, years:a=>`${isGirl()?'בת':'בן'} ${a}`,
+       allDone:'סיימת את כל העולמות! 🎉', trophies:'הגביעים שלי', trophyTitle:n=>`הגביעים של ${n}`, howOld:'בן כמה הגיבור שלנו?', setupHi:'ברוכים הבאים! בואו נתכונן להרפתקה.', whatName:'מה שם הילד או הילדה?', instT:'הפכו את מפרץ ההרפתקאות לאפליקציה!', instSub:'הוסיפו אותו למסך הבית: הוא נפתח במסך מלא ועובד גם בלי אינטרנט.', instBtn:'התקנה', instIOS:'באייפד או באייפון: לחצו על שיתוף ⬆️ ואז על „הוספה למסך הבית”.', instClose:'לא עכשיו', namePh:'שם', boyGirl:'בן או בת?', boy:'בן', girl:'בת', needName:'כתבו קודם את השם', needGender:'בחרו בן או בת', kid:'הילד או הילדה', next:'הבא', obHi:'שלום! אני קוקו התוכי. בואו נתכונן להרפתקה!', obGender:n=>`${n} בן או בת?`, obAge:n=>`${isGirl()?'בת':'בן'} כמה ${n}?`, obLater:'אפשר לשנות הכול אחר כך בפינת ההורים.', obReady:n=>`יוצאים לדרך, ${n}! 🎉`, years:a=>`${isGirl()?'בת':'בן'} ${a}`,
        gateQ:(a,b)=>`למבוגרים: כמה זה ${a} × ${b}?`, parents:'פינת ההורים', settings:'הגדרות', nameEn:'השם באנגלית', nameHe:'השם בעברית', nameNl:'השם בהולנדית',
        level:'רמה (גיל)', progress:'התקדמות', progressNote:(a)=>`המסלול בעברית, גיל ${a}. לכל שפה יש התקדמות משלה.`, firstTry:'האחוז מראה כמה פעמים ענה נכון כבר בניסיון הראשון.',
        needs:'כדאי לתרגל', none:'עוד לא שוחק', allGood:'אין עדיין נקודות חלשות. ממשיכים לשחק!', reset:'איפוס ההתקדמות הזאת',
@@ -1607,13 +1607,44 @@ function home(){
   <div class="wcards">${WORLD_ORDER.map(w=>{ const p=progOf(w,savedAge), n=stationsOf(w,savedAge).length;
     return `<button class="wcard ${p.done.length>=n?'full':''}" data-w="${w}">${wbadge(w,'lg')}<span class="wname">${t()[w]}</span><span class="wguide">${GUIDES[w].e} ${GUIDES[w].name[LK()]}</span>${ring(p.done.length,n)}<span class="wstar">⭐ ${p.stars}</span></button>`; }).join('')}</div>
   <div class="row"><button class="btn ghost" id="shelf">🏆 ${u().trophies}</button></div>`;
-  bindTop(); bindPC();
+  bindTop(); bindPC(); showInstall();
   $('#cont').onclick=()=>{ if(!nx){ shelf(); return; } world=nx.w; store.set('world',world); age=savedAge; tone([520,780],.08); startStation(nx.i); };
   app.querySelectorAll('.wcard').forEach(b=>b.onclick=()=>{ world=b.dataset.w; store.set('world',world); age=savedAge; tone([520,780],.08); map(true); });
   $('#shelf').onclick=()=>{ track('Trophy Shelf Viewed'); shelf(); };
   if(!home.greeted){ home.greeted=true; setTimeout(()=>{ if(document.querySelector('#cont')) buddySay(HOME_LINES[LK()][0](nm()), {speak:false}); }, 900); }
 }
 function bindPC(){ const b=$('#pc'); if(b) b.onclick=gate; }
+
+/* ---------- "make it an app": install banner on the home screen, and offline support (manifest.webmanifest, sw.js) ----------
+   Android, Chrome and Edge offer an Install button (the browser's own install prompt); iPad/iPhone get the Share → Add to Home Screen steps.
+   Hidden once installed, when already running as the app, inside the claude.ai preview, or for 14 days after "Not now". */
+let installEvt = null;
+const inFrame = (()=>{ try{ return window.top!==window.self; }catch(e){ return true; } })();
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+const runningAsApp = () => { try{ return matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: fullscreen)').matches || navigator.standalone===true; }catch(e){ return false; } };
+addEventListener('beforeinstallprompt', e=>{ e.preventDefault(); installEvt=e; if(current===home && document.querySelector('.hero')) showInstall(); });
+addEventListener('appinstalled', ()=>{ installEvt=null; store.set('installed',true); track('App Installed'); hideInstall(); });
+const hideInstall = () => { const b=document.getElementById('inst'); if(b) b.remove(); };
+function showInstall(){   // a floating card at the bottom of the home screen (outside the game area, so the game keeps its size)
+  hideInstall();
+  if(runningAsApp() || inFrame || store.get('installed',false)) return;
+  if(Date.now() - store.get('instDismiss',0) < 14*864e5) return;
+  const ios = isIOS && !installEvt;
+  if(!installEvt && !ios) return;
+  const b=document.createElement('div'); b.className='instbar'; b.id='inst'; b.setAttribute('role','region'); b.setAttribute('aria-label',u().instT);
+  b.innerHTML=`<img src="icons/icon-192.png" alt="" class="instic" onerror="this.remove()">
+    <div class="insttx"><b>${u().instT}</b><span>${ios?u().instIOS:u().instSub}</span></div>
+    ${ios?'':`<button class="btn instgo" id="instGo">${u().instBtn}</button>`}<button class="instx" id="instX" aria-label="${u().instClose}">✕</button>`;
+  document.body.appendChild(b);
+  if(!showInstall.seen){ showInstall.seen=true; track('Install Banner Shown',{platform:installEvt?'install_button':'ios_steps'}); }
+  const go=$('#instGo');
+  if(go) go.onclick=async()=>{ const ev=installEvt; if(!ev) return; installEvt=null; track('App Install Clicked');
+    try{ ev.prompt(); const r=await ev.userChoice; track('App Install Choice',{outcome:(r&&r.outcome)||'unknown'}); if(r&&r.outcome==='accepted') b.remove(); else showInstall(); }catch(e){} };
+  $('#instX').onclick=()=>{ store.set('instDismiss',Date.now()); track('Install Banner Dismissed'); b.classList.add('out'); setTimeout(()=>b.remove(),250); };
+}
+if('serviceWorker' in navigator && !inFrame && document.querySelector('link[rel="manifest"]') && (location.protocol==='https:' || /^(localhost|127\.0\.0\.1)$/.test(location.hostname))){
+  addEventListener('load', ()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+}
 
 function shelf(viewAge=savedAge){
   age=null; current=()=>shelf(viewAge); setWorldBg('home');
@@ -2057,7 +2088,7 @@ const BG = {
 };
 let bgKey = '';
 function setWorldBg(theme){   // called at the start of every screen
-  showBuddy(theme);
+  showBuddy(theme); hideInstall();   // the install card only lives on the home screen
   document.body.classList.remove('quiz');
   window.scrollTo(0,0);                                         // every new screen starts at the top
   requestAnimationFrame(()=>requestAnimationFrame(fitScreen)); setTimeout(fitScreen, 120);   // after the new screen is drawn (timer as a backup)

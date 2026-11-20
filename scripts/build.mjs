@@ -7,7 +7,8 @@ const html = read('index.html');
 const inline = s => s
   .replace(/<link rel="stylesheet" href="src\/styles\.css(?:\?v=[\w-]+)?">/, () => `<style>\n${read('src/styles.css')}</style>`)
   .replace(/<script src="(src\/[\w.]+\.js)(?:\?v=[\w-]+)?"><\/script>/g, (_, f) => `<script>\n${read(f).replace(/<\/script/gi, '<\\/script')}</script>`);
-const full = inline(html);
+// the single-file copies have no manifest, icons or offline worker next to them, so those links are left out
+const full = inline(html).replace(/<link rel="(manifest|icon|apple-touch-icon)"[^>]*>\n?/g, '');
 mkdirSync(new URL('../dist/', import.meta.url), { recursive: true });
 writeFileSync(new URL('../dist/index.html', import.meta.url), full);
 const head = full.slice(full.indexOf('<title>'), full.indexOf('</head>'))

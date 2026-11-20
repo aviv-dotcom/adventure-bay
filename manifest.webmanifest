@@ -1,0 +1,18 @@
+{
+  "id": "./",
+  "name": "Adventure Bay",
+  "short_name": "Adventure Bay",
+  "description": "A learning adventure for kids aged 4–7: numbers, letters, science, logic and feelings. In English, Hebrew and Dutch.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#bfe8ff",
+  "theme_color": "#1f8fc4",
+  "categories": ["education", "kids", "games"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

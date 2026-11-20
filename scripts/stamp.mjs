@@ -9,4 +9,6 @@ try { stamp = execSync('git rev-parse --short HEAD').toString().trim() + '-' + D
 catch { stamp = Date.now().toString(36); }
 const html = readFileSync(url, 'utf8').replace(/(src\/[\w.]+\.(?:js|css))(\?v=[\w-]+)?"/g, `$1?v=${stamp}"`);
 writeFileSync(url, html);
+const sw = new URL('../sw.js', import.meta.url);
+writeFileSync(sw, readFileSync(sw, 'utf8').replace(/const VERSION = '[^']*';/, `const VERSION = '${stamp}';`));
 console.log('stamped index.html with', stamp);

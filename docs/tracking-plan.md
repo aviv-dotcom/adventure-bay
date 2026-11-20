@@ -40,6 +40,11 @@ Before going public, add a short privacy notice for parents and check it against
 | `Practice Started` | "Practice with the guide" round begins | `world`, `skills` (array), `skill_count` |
 | `Practice Completed` | Practice round finished | `world`, `stars`, `max_stars`, `duration_ms` |
 | `Guide Tapped` | The guide animal is tapped for a fact or joke | `guide` (`home`, `math`, `letters`, `science`, `logic`, `feelings`) |
+| `Install Banner Shown` | The "make it an app" card appears on the home screen (once per visit) | `platform` (`install_button` or `ios_steps`) |
+| `App Install Clicked` | The Install button on that card is tapped | |
+| `App Install Choice` | The browser's install dialog is answered | `outcome` (`accepted` or `dismissed`) |
+| `App Installed` | The game was added to the home screen | |
+| `Install Banner Dismissed` | The card is closed with ✕ (hidden for 14 days) | |
 | `Trophy Shelf Viewed` | Trophy shelf opened from home | – |
 | `Parents Corner Opened` | Grown-up check passed | – |
 | `Parents Gate Failed` | Grown-up check answered wrong | – |
